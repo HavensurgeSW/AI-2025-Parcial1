@@ -1,19 +1,22 @@
-﻿public class Node<Coordinate> : INode, INode<Coordinate>
+﻿namespace LEAN
 {
-    private Coordinate coordinate;
-
-    public void SetCoordinate(Coordinate coordinate)
+    public class Node<Coordinate> : INode, INode<Coordinate>
     {
-        this.coordinate = coordinate;
-    }
+        private Coordinate coordinate;
 
-    public Coordinate GetCoordinate()
-    {
-        return coordinate;
-    }
+        public void SetCoordinate(Coordinate coordinate)
+        {
+            this.coordinate = coordinate;
+        }
 
-    public bool IsBloqued()
-    {
-        return false;
+        public Coordinate GetCoordinate()
+        {
+            return coordinate;
+        }
+
+        public bool IsBloqued()
+        {
+            return false;
+        }
     }
 }

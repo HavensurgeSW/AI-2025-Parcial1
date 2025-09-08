@@ -1,26 +1,29 @@
 using UnityEngine;
 
-public class GrapfView : MonoBehaviour
+namespace LEAN
 {
-    public Vector2IntGrapf<Node<Vector2Int>> grapf;
-
-    void Start()
+    public class GrapfView : MonoBehaviour
     {
-        grapf = new Vector2IntGrapf<Node<Vector2Int>>(10, 10);
-    }
+        public Vector2IntGrapf<Node<Vector2Int>> grapf;
 
-    private void OnDrawGizmos()
-    {
-        if (!Application.isPlaying)
-            return;
-        foreach (Node<Vector2Int> node in grapf.nodes)
+        void Start()
         {
-            if (node.IsBloqued())
-                Gizmos.color = Color.red;
-            else
-                Gizmos.color = Color.green;
-            
-            Gizmos.DrawWireSphere(new Vector3(node.GetCoordinate().x, node.GetCoordinate().y), 0.1f);
+            grapf = new Vector2IntGrapf<Node<Vector2Int>>(10, 10);
+        }
+
+        private void OnDrawGizmos()
+        {
+            if (!Application.isPlaying)
+                return;
+            foreach (Node<Vector2Int> node in grapf.nodes)
+            {
+                if (node.IsBloqued())
+                    Gizmos.color = Color.red;
+                else
+                    Gizmos.color = Color.green;
+
+                Gizmos.DrawWireSphere(new Vector3(node.GetCoordinate().x, node.GetCoordinate().y), 0.1f);
+            }
         }
     }
 }

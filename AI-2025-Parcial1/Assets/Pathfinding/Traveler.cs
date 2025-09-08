@@ -9,20 +9,23 @@ public class Traveler : MonoBehaviour
 
     private Node<Vector2Int> startNode; 
     private Node<Vector2Int> destinationNode;
+ 
 
     void Start()
-    {
-        Pathfinder = new AStarPathfinder<Node<Vector2Int>>();
+    {       
+
+        Pathfinder = new AStarPathfinder<Node<Vector2Int>>();       
 
         startNode = new Node<Vector2Int>();
-        startNode.SetCoordinate(new Vector2Int(Random.Range(0, 10), Random.Range(0, 10)));
+        startNode.SetCoordinate(new Vector2Int(Random.Range(0, 10), Random.Range(0, 10)));        
         Debug.Log("Start: " + startNode.GetCoordinate());
 
         destinationNode = new Node<Vector2Int>();
-        destinationNode.SetCoordinate(new Vector2Int(Random.Range(0, 10), Random.Range(0, 10)));
+        destinationNode.SetCoordinate(new Vector2Int(Random.Range(0, 10), Random.Range(0, 10)));        
         Debug.Log("Destination: " + destinationNode.GetCoordinate());
 
         List<Node<Vector2Int>> path = Pathfinder.FindPath(startNode, destinationNode, graphView.graph.nodes);
+
         StartCoroutine(Move(path));
     }
 
