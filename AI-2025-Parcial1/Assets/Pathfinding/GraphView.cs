@@ -6,7 +6,7 @@ public class GraphView : MonoBehaviour
 
     void Awake()
     {
-        graph = new Vector2IntGraph<Node<Vector2Int>>(10, 10);
+        graph = new Vector2IntGraph<Node<Vector2Int>>(20, 10);
     }
 
     private void OnDrawGizmos()

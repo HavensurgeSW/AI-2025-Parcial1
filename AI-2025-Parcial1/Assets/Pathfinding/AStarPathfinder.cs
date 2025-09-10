@@ -6,14 +6,28 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
     // cached reference to the graph during a FindPath call
     private List<NodeType> graphNodes;
 
+    // grid bounds computed from graphNodes when coordinates are available
+    private int gridMinX, gridMinY, gridWidth, gridHeight;
+
     protected override int Distance(NodeType A, NodeType B)
     {
-        // Heuristic: Manhattan distance when nodes expose Vector2Int coordinates,
-        // otherwise fall back to 0 (admissible).
+        // Toroidal (wrap-around) Manhattan distance when nodes expose Vector2Int coordinates.
         if (A is INode<Vector2Int> a && B is INode<Vector2Int> b)
         {
             Vector2Int ca = a.GetCoordinate();
             Vector2Int cb = b.GetCoordinate();
+
+            if (gridWidth > 0 && gridHeight > 0)
+            {
+                int dxRaw = Mathf.Abs(ca.x - cb.x);
+                int dyRaw = Mathf.Abs(ca.y - cb.y);
+
+                int dx = Mathf.Min(dxRaw, gridWidth - dxRaw);
+                int dy = Mathf.Min(dyRaw, gridHeight - dyRaw);
+
+                return dx + dy;
+            }
+            // fallback to plain Manhattan if bounds unknown
             return Mathf.Abs(ca.x - cb.x) + Mathf.Abs(ca.y - cb.y);
         }
 
@@ -27,30 +41,29 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
         if (node == null || graphNodes == null)
             return neighbors;
 
-        // If nodes expose Vector2Int coordinates, use 4-connected grid neighbors (Manhattan == 1)
+        // Only support Vector2Int coordinates here (4-connected grid).
         if (node is INode<Vector2Int> nodeWithCoord)
         {
             Vector2Int coord = nodeWithCoord.GetCoordinate();
 
-            foreach (var candidate in graphNodes)
+            // Four cardinal directions
+            Vector2Int[] deltas = new[]
             {
-                if (candidate == null || NodesEquals(candidate, node))
-                    continue;
+                new Vector2Int(1, 0),
+                new Vector2Int(-1, 0),
+                new Vector2Int(0, 1),
+                new Vector2Int(0, -1)
+            };
 
-                if (!(candidate is INode<Vector2Int> candWithCoord))
-                    continue;
-
-                Vector2Int c = candWithCoord.GetCoordinate();
-                int dx = Mathf.Abs(c.x - coord.x);
-                int dy = Mathf.Abs(c.y - coord.y);
-
-                // 4-connected neighbors
-                if (dx + dy == 1)
-                    neighbors.Add(candidate);
+            foreach (var d in deltas)
+            {
+                Vector2Int neighborCoord = WrapCoordinate(new Vector2Int(coord.x + d.x, coord.y + d.y));
+                var neighborNode = FindNodeByCoordinate(neighborCoord);
+                if (neighborNode != null)
+                    neighbors.Add(neighborNode);
             }
         }
 
-        // If node doesn't expose coordinates, return empty set (caller can override by subclassing)
         return neighbors;
     }
 
@@ -60,20 +73,31 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
     }
 
     protected override int MoveToNeighborCost(NodeType A, NodeType B)
-    {
-        // If nodes have Vector2Int coords, cost 1 for orthogonal, 14 for diagonal.
+    {       
+        // On grid with Vector2Int coords each cardinal move costs 1.
         if (A is INode<Vector2Int> a && B is INode<Vector2Int> b)
         {
             Vector2Int ca = a.GetCoordinate();
             Vector2Int cb = b.GetCoordinate();
-            int dx = Mathf.Abs(ca.x - cb.x);
-            int dy = Mathf.Abs(ca.y - cb.y);
 
-            if (dx + dy == 1) return 1;
-            if (dx == 1 && dy == 1) return 14;
+            // compute shortest delta considering wrap
+            if (gridWidth > 0 && gridHeight > 0)
+            {
+                int dxRaw = Mathf.Abs(ca.x - cb.x);
+                int dyRaw = Mathf.Abs(ca.y - cb.y);
+                int dx = Mathf.Min(dxRaw, gridWidth - dxRaw);
+                int dy = Mathf.Min(dyRaw, gridHeight - dyRaw);
+
+                if (dx + dy == 1) return 1;
+            }
+            else
+            {
+                int dx = Mathf.Abs(ca.x - cb.x);
+                int dy = Mathf.Abs(ca.y - cb.y);
+                if (dx + dy == 1) return 1;
+            }
         }
 
-        // Fallback single-step cost
         return 1;
     }
 
@@ -85,13 +109,9 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
         if (A == null || B == null)
             return false;
 
-        // If both nodes expose Vector2Int coordinates, compare coordinates.
         if (A is INode<Vector2Int> a && B is INode<Vector2Int> b)
-        {
             return a.GetCoordinate() == b.GetCoordinate();
-        }
 
-        // Fall back to default equality comparer (may be reference equality if not overridden)
         return EqualityComparer<NodeType>.Default.Equals(A, B);
     }
 
@@ -106,6 +126,9 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
         // Resolve start/destination to nodes from the graph if possible (match by coordinate).
         NodeType start = FindOrAddGraphNode(graphNodes, startNode);
         NodeType goal = FindOrAddGraphNode(graphNodes, destinationNode);
+
+        // Recompute bounds now that graphNodes may have changed
+        ComputeGridBounds();
 
         // Quick check: start == goal
         if (NodesEquals(start, goal))
@@ -209,6 +232,7 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
 
             // Not found in graph: add the probe node so algorithm can start/finish at its coordinate.
             nodes.Add(probe);
+            // bounds will be recomputed by caller
             return probe;
         }
 
@@ -244,5 +268,64 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
 
         path.Reverse();
         return path;
+    }
+
+    private void ComputeGridBounds()
+    {
+        int minX = int.MaxValue, maxX = int.MinValue, minY = int.MaxValue, maxY = int.MinValue;
+        bool found = false;
+
+        foreach (var n in graphNodes)
+        {
+            if (n is INode<Vector2Int> withCoord)
+            {
+                Vector2Int c = withCoord.GetCoordinate();
+                if (c.x < minX) minX = c.x;
+                if (c.x > maxX) maxX = c.x;
+                if (c.y < minY) minY = c.y;
+                if (c.y > maxY) maxY = c.y;
+                found = true;
+            }
+        }
+
+        if (!found)
+        {
+            gridMinX = gridMinY = gridWidth = gridHeight = 0;
+            return;
+        }
+
+        gridMinX = minX;
+        gridMinY = minY;
+        gridWidth = maxX - minX + 1;
+        gridHeight = maxY - minY + 1;
+
+        if (gridWidth < 0) gridWidth = 0;
+        if (gridHeight < 0) gridHeight = 0;
+    }
+
+    private Vector2Int WrapCoordinate(Vector2Int input)
+    {
+        if (gridWidth <= 0 || gridHeight <= 0)
+            return input;
+
+        int wrappedX = (input.x - gridMinX) % gridWidth;
+        if (wrappedX < 0) wrappedX += gridWidth;
+        wrappedX += gridMinX;
+
+        int wrappedY = (input.y - gridMinY) % gridHeight;
+        if (wrappedY < 0) wrappedY += gridHeight;
+        wrappedY += gridMinY;
+
+        return new Vector2Int(wrappedX, wrappedY);
+    }
+
+    private NodeType FindNodeByCoordinate(Vector2Int coord)
+    {
+        foreach (var n in graphNodes)
+        {
+            if (n is INode<Vector2Int> withCoord && withCoord.GetCoordinate() == coord)
+                return n;
+        }
+        return default;
     }
 }
