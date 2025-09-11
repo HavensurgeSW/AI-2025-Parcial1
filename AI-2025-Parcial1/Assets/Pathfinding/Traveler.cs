@@ -17,7 +17,8 @@ public class Traveler : MonoBehaviour
         Pathfinder = new AStarPathfinder<Node<Vector2Int>>();       
 
         startNode = new Node<Vector2Int>();
-        startNode.SetCoordinate(new Vector2Int(Random.Range(0, 10), Random.Range(0, 10)));        
+        //startNode.SetCoordinate(new Vector2Int(Random.Range(0, 10), Random.Range(0, 10)));        
+        startNode.SetCoordinate(new Vector2Int(0,0));        
         Debug.Log("Start: " + startNode.GetCoordinate());
 
         destinationNode = new Node<Vector2Int>();
