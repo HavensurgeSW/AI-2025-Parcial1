@@ -1,11 +1,24 @@
 using UnityEngine;
 
-public class GoldMine : MonoBehaviour
+public class GoldMine
 {
-    public int maxGold = 1000;
-    public int currentGold = 1000;
-    public int foodStored = 0;
+    public int maxGold;
+    public int currentGold;
+    public int foodStored;
 
+    public Vector2Int Position { get; }
+
+    public GoldMine() { 
+        maxGold = 1000;
+        currentGold = maxGold;
+        Debug.Log("GoldMine created with no position. DEFAULT CONSTRUCTOR");
+    }
+    public GoldMine(int maxGold, Vector2Int position)
+    {
+        this.maxGold = maxGold;
+        this.currentGold = maxGold;
+        this.Position = position;
+    }
     public int Mine(int amount)
     {
         int mined = Mathf.Min(amount, currentGold);
