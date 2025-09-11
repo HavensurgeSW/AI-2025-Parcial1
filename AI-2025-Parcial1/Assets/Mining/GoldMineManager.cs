@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class GoldMineManager
 {
-    private readonly List<GoldMine> mines = new List<GoldMine>();
+    public  List<GoldMine> mines = new List<GoldMine>();
     private readonly Dictionary<Vector2Int, GoldMine> byPosition = new Dictionary<Vector2Int, GoldMine>();
 
     public IReadOnlyList<GoldMine> Mines => mines;
@@ -15,6 +15,7 @@ public class GoldMineManager
         {
             mines.Add(mine);
             byPosition[mine.Position] = mine;
+            Debug.Log("Created mine at " + mine.Position.x+ ", " + mine.Position.y);
         }
     }
 
@@ -66,4 +67,9 @@ public class GoldMineManager
         }
         return best;
     }
+    public void CallExist()
+    {
+        Debug.Log("GM exists");
+    }
+
 }

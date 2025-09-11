@@ -6,7 +6,7 @@ public class GraphView : MonoBehaviour
     public GoldMineManager mineManager; // optional, set in inspector or left null
 
     [SerializeField]private Vector2Int mapDimensions = new Vector2Int(10,10);
-
+    [SerializeField]private GameObject tilePrefab;
     void Awake()
     {
         graph = new Vector2IntGraph<Node<Vector2Int>>(mapDimensions.x, mapDimensions.y);
@@ -14,8 +14,10 @@ public class GraphView : MonoBehaviour
         {
             // create a default manager so GetMineAt calls are safe in Play mode
             mineManager = new GoldMineManager();
+            Debug.Log("Created MineManager");
             mineManager.CreateMines(3, 1000, new Vector2Int(mapDimensions.x, mapDimensions.y));
         }
+        InstantiateTiles();
     }
 
     private void OnDrawGizmos()
@@ -36,5 +38,27 @@ public class GraphView : MonoBehaviour
             
             Gizmos.DrawWireSphere(new Vector3(node.GetCoordinate().x, node.GetCoordinate().y), 0.1f);
         }
+    }
+    public void InstantiateTiles()
+    {
+        foreach (var node in graph.nodes)
+        {
+            Vector2Int coord = node.GetCoordinate();
+            GameObject tile = Instantiate(tilePrefab, new Vector3(coord.x, coord.y, 0), Quaternion.identity, this.transform);
+
+            // Cambia el color según el estado del nodo
+            var sr = tile.GetComponent<SpriteRenderer>();
+            if (node.IsBlocked())
+                sr.color = Color.red;
+            else if (mineManager.GetMineAt(coord) != null)
+                sr.color = Color.yellow;
+            else
+                sr.color = Color.green;
+        }
+    }
+
+
+    public void CallExist() { 
+        Debug.Log("GV exists");
     }
 }

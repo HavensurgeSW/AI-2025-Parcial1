@@ -4,16 +4,19 @@ using UnityEngine;
 
 public class Traveler : MonoBehaviour
 {
-    public GraphView graphView;
+    public GraphView GV;
     private AStarPathfinder<Node<Vector2Int>> Pathfinder;
 
     private Node<Vector2Int> startNode; 
     private Node<Vector2Int> destinationNode;
- 
+    
+    
 
     void Start()
-    {       
-
+    {
+        Debug.Log("Spawning traveler");
+        GV.CallExist();
+        GV.mineManager.CallExist();
         Pathfinder = new AStarPathfinder<Node<Vector2Int>>();       
 
         startNode = new Node<Vector2Int>();
@@ -22,10 +25,11 @@ public class Traveler : MonoBehaviour
         Debug.Log("Start: " + startNode.GetCoordinate());
 
         destinationNode = new Node<Vector2Int>();
-        destinationNode.SetCoordinate(new Vector2Int(Random.Range(0, 10), Random.Range(0, 10)));        
+        GoldMine nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
+        destinationNode.SetCoordinate(new Vector2Int(nearestMine.Position.x, nearestMine.Position.y));        
         Debug.Log("Destination: " + destinationNode.GetCoordinate());
 
-        List<Node<Vector2Int>> path = Pathfinder.FindPath(startNode, destinationNode, graphView.graph.nodes);
+        List<Node<Vector2Int>> path = Pathfinder.FindPath(startNode, destinationNode, GV.graph.nodes);
 
         StartCoroutine(Move(path));
     }
