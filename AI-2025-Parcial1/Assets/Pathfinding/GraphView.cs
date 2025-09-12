@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class GraphView : MonoBehaviour
+public class GraphView
 {
     public Vector2IntGraph<Node<Vector2Int>> graph;
     public GoldMineManager mineManager; // optional, set in inspector or left null
@@ -45,7 +45,7 @@ public class GraphView : MonoBehaviour
         {
             Vector2Int coord = node.GetCoordinate();
             GameObject tile = Instantiate(tilePrefab, new Vector3(coord.x, coord.y, 0), Quaternion.identity, this.transform);
-
+            
             // Cambia el color según el estado del nodo
             var sr = tile.GetComponent<SpriteRenderer>();
             if (node.IsBlocked())

@@ -2,36 +2,31 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Traveler : MonoBehaviour
+public class Traveler
 {
     public GraphView GV;
-    private AStarPathfinder<Node<Vector2Int>> Pathfinder;
+    private AStarPathfinder<Node<Vector2Int>> pathfinder;
+
 
     private Node<Vector2Int> startNode; 
     private Node<Vector2Int> destinationNode;
     
     
 
-    void Start()
+    Traveler()
     {
-        Debug.Log("Spawning traveler");
-        GV.CallExist();
-        GV.mineManager.CallExist();
-        Pathfinder = new AStarPathfinder<Node<Vector2Int>>();       
+        pathfinder = new AStarPathfinder<Node<Vector2Int>>();   
+        
 
-        startNode = new Node<Vector2Int>();
-        //startNode.SetCoordinate(new Vector2Int(Random.Range(0, 10), Random.Range(0, 10)));        
-        startNode.SetCoordinate(new Vector2Int(0,0));        
-        Debug.Log("Start: " + startNode.GetCoordinate());
 
-        destinationNode = new Node<Vector2Int>();
-        GoldMine nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
-        destinationNode.SetCoordinate(new Vector2Int(nearestMine.Position.x, nearestMine.Position.y));        
-        Debug.Log("Destination: " + destinationNode.GetCoordinate());
+        //startNode = new Node<Vector2Int>();
+        //startNode.SetCoordinate(new Vector2Int(0,0));        
+        //destinationNode = new Node<Vector2Int>();
+        //GoldMine nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
+        //destinationNode.SetCoordinate(new Vector2Int(nearestMine.Position.x, nearestMine.Position.y));
+        //List<Node<Vector2Int>> path = pathfinder.FindPath(startNode, destinationNode, GV.graph.nodes);
 
-        List<Node<Vector2Int>> path = Pathfinder.FindPath(startNode, destinationNode, GV.graph.nodes);
-
-        StartCoroutine(Move(path));
+        //StartCoroutine(Move(path));
     }
 
     public IEnumerator Move(List<Node<Vector2Int>> path) 

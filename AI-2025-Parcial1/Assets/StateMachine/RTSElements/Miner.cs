@@ -10,12 +10,6 @@ class Miner : MonoBehaviour
     [SerializeField] GoldMine goldMine;
     [SerializeField] Townhall townhall;
     InventoryData inventoryData = new InventoryData();
-
-    public float speed;
-    public float reachDistance;
-    public Transform mineLocation;
-    public Transform townLocation;
-    public Transform moveTarget;
     public enum State
     {
         MoveToTarget,
@@ -38,8 +32,8 @@ class Miner : MonoBehaviour
     {
         minerFsm = new FSM<State, Flags>(State.MoveToTarget);
 
-        minerFsm.AddState<MinerMovingState>(State.MoveToTarget, onTickParameters: () => new object[] { moveTarget, transform, speed, reachDistance, Time.deltaTime});
-        minerFsm.AddState<MinerMoveToTown>(State.MoveToTown, onTickParameters: () => new object[] { townLocation, transform, speed, reachDistance, Time.deltaTime });
+        minerFsm.AddState<MinerMovingState>(State.MoveToTarget, onTickParameters: () => new object[] {Time.deltaTime});
+        minerFsm.AddState<MinerMoveToTown>(State.MoveToTown, onTickParameters: () => new object[] { });
         minerFsm.AddState<MinerDepositingState>(State.Depositing, onTickParameters: () => new object[] { townhall, inventoryData}, null, onExitParameters: () => new object[] { this });
         minerFsm.AddState<MinerMiningState>(State.Mining, onTickParameters: () => new object[] { goldMine, miningRate, inventoryData}, null, onExitParameters: () => new object[] { this});
 

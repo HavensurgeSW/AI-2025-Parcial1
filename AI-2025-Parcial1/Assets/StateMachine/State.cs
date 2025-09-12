@@ -78,7 +78,7 @@ public abstract class State
         {
             return new BehaviourActions();
         }
-        public virtual BehaviourActions GetOnExitBehaviour(params object[] parameters)
+        public virtual BehaviourActions GetOnExitBehaviours(params object[] parameters)
         {
             return new BehaviourActions();
         }
