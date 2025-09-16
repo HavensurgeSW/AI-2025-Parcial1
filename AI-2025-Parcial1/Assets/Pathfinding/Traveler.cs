@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static TreeEditor.TreeEditorHelper;
 
 public class Traveler
 {
@@ -29,11 +30,15 @@ public class Traveler
         //StartCoroutine(Move(path));
     }
 
+    public List<Node<Vector2Int>> FindPath(Node<Vector2Int> start, Node<Vector2Int> destination, GraphView gv) {
+        return pathfinder.FindPath(startNode, destinationNode, gv.graph.nodes);
+    }
+
     public IEnumerator Move(List<Node<Vector2Int>> path) 
     {
         foreach (Node<Vector2Int> node in path)
         {
-            transform.position = new Vector3(node.GetCoordinate().x, node.GetCoordinate().y);
+            //transform.position = new Vector3(node.GetCoordinate().x, node.GetCoordinate().y);
             Debug.Log("Moved to: "+ node.GetCoordinate().x+" "+ node.GetCoordinate().y);
             yield return new WaitForSeconds(1.0f);
         }

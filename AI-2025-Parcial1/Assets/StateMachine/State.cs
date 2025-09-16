@@ -106,7 +106,7 @@ public sealed class PatrolState : State
         return default;
     }
 
-    public override BehaviourActions GetOnExitBehaviour(params object[] parameters)
+    public override BehaviourActions GetOnExitBehaviours(params object[] parameters)
     {
         return default;
     }
@@ -178,7 +178,7 @@ public sealed class ChaseState : State
         return default;
     }
 
-    public override BehaviourActions GetOnExitBehaviour(params object[] parameters)
+    public override BehaviourActions GetOnExitBehaviours(params object[] parameters)
     {
         return default;
     }
@@ -225,7 +225,7 @@ public sealed class ExplodeState : State
         return behaviourActions;
     }
 
-    public override BehaviourActions GetOnExitBehaviour(params object[] parameters)
+    public override BehaviourActions GetOnExitBehaviours(params object[] parameters)
     {
         return default;
     }

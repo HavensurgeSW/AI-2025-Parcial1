@@ -21,7 +21,7 @@ public class FSM<StateType, FlagType>
         (behaviourOnTickParameters[currentState]?.Invoke());
     private BehaviourActions GetCurrentOnEnterBehaviour => states[currentState].GetOnEnterBehaviours
         (behaviourOnEnterParameters[currentState]?.Invoke());
-    private BehaviourActions GetCurrentOnExitBehaviour => states[currentState].GetOnExitBehaviour
+    private BehaviourActions GetCurrentOnExitBehaviour => states[currentState].GetOnExitBehaviours
         (behaviourOnExitParameters[currentState]?.Invoke());
 
     public FSM(StateType defaultState)

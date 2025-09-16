@@ -41,20 +41,20 @@ public class GraphView
     }
     public void InstantiateTiles()
     {
-        foreach (var node in graph.nodes)
-        {
-            Vector2Int coord = node.GetCoordinate();
-            GameObject tile = Instantiate(tilePrefab, new Vector3(coord.x, coord.y, 0), Quaternion.identity, this.transform);
+        //foreach (var node in graph.nodes)
+        //{
+        //    Vector2Int coord = node.GetCoordinate();
+        //    //GameObject tile = Monobehaviour.Instantiate(tilePrefab, new Vector3(coord.x, coord.y, 0), Quaternion.identity, this.transform);
             
-            // Cambia el color según el estado del nodo
-            var sr = tile.GetComponent<SpriteRenderer>();
-            if (node.IsBlocked())
-                sr.color = Color.red;
-            else if (mineManager.GetMineAt(coord) != null)
-                sr.color = Color.yellow;
-            else
-                sr.color = Color.green;
-        }
+        //    // Cambia el color según el estado del nodo
+        //    var sr = tile.GetComponent<SpriteRenderer>();
+        //    if (node.IsBlocked())
+        //        sr.color = Color.red;
+        //    else if (mineManager.GetMineAt(coord) != null)
+        //        sr.color = Color.yellow;
+        //    else
+        //        sr.color = Color.green;
+        //}
     }
 
 

@@ -8,16 +8,26 @@ using UnityEngine;
 
 public class MinerMovingState : State
 {
- 
+    //Pathfinding 
+    private GraphView GV;
     private Traveler traveler;
+    private Node<Vector2Int> startNode;
+    private Node<Vector2Int> destinationNode;
+    List<Node<Vector2Int>> path;
+
+    //Game movement
+    private Transform minerTransform;
+    private int currentPathIndex;
+    private float speed = 1f;
+    private float nodeReachDistance = 0.1f;
     public override BehaviourActions GetOnEnterBehaviours(params object[] parameters)
     {
-        
+
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
-          
-
+            path = traveler.FindPath(startNode, destinationNode, GV);
+            currentPathIndex = 0;
         });
         return behaviourActions;
     }
@@ -28,16 +38,34 @@ public class MinerMovingState : State
         float deltaTime = (float)parameters[0];
 
         BehaviourActions behaviourActions = new BehaviourActions();
+        minerTransform = parameters[0] as Transform;
+        speed = (float)parameters[1];
+
 
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
-            
-            
+            Node<Vector2Int> targetNode = path[currentPathIndex];
+            Vector2Int coord = targetNode.GetCoordinate();
+            Vector3 targetPos = new Vector3(coord.x, coord.y, minerTransform.position.z);
+            minerTransform.position = Vector3.MoveTowards(minerTransform.position, targetPos, speed * deltaTime);
+
+            if (Vector3.Distance(minerTransform.position, targetPos) <= nodeReachDistance)
+            {
+                currentPathIndex++;
+                Debug.Log("Reached Node: " + coord.x + " " + coord.y);
+            }
+
         });
 
         behaviourActions.SetTransitionBehaviour(() =>
         {
-            if (true/*stuff*/)
+            if (path == null || path.Count == 0)
+            {              
+                OnFlag?.Invoke(Miner.Flags.OnTargetReach);
+                return;
+            }
+
+            if (currentPathIndex >= path.Count)
             {
                 Debug.Log("Reached Target");
                 OnFlag?.Invoke(Miner.Flags.OnTargetReach);
