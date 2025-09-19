@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using UnityEngine;
 
 public class FSM<StateType, FlagType>
     where StateType : Enum
@@ -62,6 +64,7 @@ public class FSM<StateType, FlagType>
     private void ForceState(StateType state)
     {
         currentState = Convert.ToInt32(state);
+        //ExecuteBehaviour(GetCurrentOnEnterBehaviour);
     }
 
     public void SetTransition(StateType originalState, FlagType flag, StateType destinationState, Action onTransition = null)

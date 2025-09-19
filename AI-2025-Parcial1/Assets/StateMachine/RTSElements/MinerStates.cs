@@ -10,10 +10,10 @@ public class MinerMovingState : State
 {
     //Pathfinding 
     private GraphView GV;
-    private Traveler traveler;
-    private Node<Vector2Int> startNode;
-    private Node<Vector2Int> destinationNode;
-    List<Node<Vector2Int>> path;
+    private Traveler traveler = new Traveler();
+    private Node<Vector2Int> startNode = new Node<Vector2Int>();
+    private Node<Vector2Int> destinationNode = new Node<Vector2Int>();
+    List<Node<Vector2Int>> path = new List<Node<Vector2Int>>();
 
     //Game movement
     private Transform minerTransform;
@@ -22,30 +22,37 @@ public class MinerMovingState : State
     private float nodeReachDistance = 0.1f;
     public override BehaviourActions GetOnEnterBehaviours(params object[] parameters)
     {
+      
+        startNode = parameters[0] as Node<Vector2Int>;
+        //destinationNode = parameters[1] as Node<Vector2Int>;
+        GV = parameters[1] as GraphView;
+     
+        path = traveler.FindPath(startNode, destinationNode, GV);
+        currentPathIndex = 0;
 
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
-            path = traveler.FindPath(startNode, destinationNode, GV);
-            currentPathIndex = 0;
+            
         });
         return behaviourActions;
     }
 
     public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
     {
-        
-        float deltaTime = (float)parameters[0];
-
         BehaviourActions behaviourActions = new BehaviourActions();
         minerTransform = parameters[0] as Transform;
-        speed = (float)parameters[1];
+        float deltaTime = (float)parameters[1];
+        //speed = (float)parameters[1];
 
 
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
-            Node<Vector2Int> targetNode = path[currentPathIndex];
-            Vector2Int coord = targetNode.GetCoordinate();
+            Node<Vector2Int> targetNode = new Node<Vector2Int>();
+            Vector2Int coord = new Vector2Int();
+
+            targetNode = path[currentPathIndex];
+            coord = targetNode.GetCoordinate();
             Vector3 targetPos = new Vector3(coord.x, coord.y, minerTransform.position.z);
             minerTransform.position = Vector3.MoveTowards(minerTransform.position, targetPos, speed * deltaTime);
 
@@ -60,7 +67,7 @@ public class MinerMovingState : State
         behaviourActions.SetTransitionBehaviour(() =>
         {
             if (path == null || path.Count == 0)
-            {              
+            {
                 OnFlag?.Invoke(Miner.Flags.OnTargetReach);
                 return;
             }
@@ -168,8 +175,8 @@ public class MinerMiningState : State
 
         behaviourActions.AddMultiThreadableBehaviour(0, () =>
         {
-            int minedAmount = goldMine.Mine(miningRate);
-            inv.inventory+= minedAmount;
+            //int minedAmount = goldMine.Mine(miningRate);
+            //inv.inventory+= minedAmount;
         });
 
         behaviourActions.SetTransitionBehaviour(() =>
@@ -202,3 +209,27 @@ public class MinerMiningState : State
         return behaviourActions;
     }
 }
+public class MinerIdle : State {
+    public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
+    {
+        
+
+
+        BehaviourActions behaviourActions = new BehaviourActions();
+
+
+        behaviourActions.AddMainThreadableBehaviour(0, () =>
+        {           
+             
+        });
+
+        behaviourActions.SetTransitionBehaviour(() =>
+        {            
+            OnFlag?.Invoke(Miner.Flags.OnFuckYou);            
+        });
+
+        return behaviourActions;
+    }
+}
+
+

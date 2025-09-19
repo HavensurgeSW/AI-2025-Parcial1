@@ -5,33 +5,30 @@ using static TreeEditor.TreeEditorHelper;
 
 public class Traveler
 {
-    public GraphView GV;
     private AStarPathfinder<Node<Vector2Int>> pathfinder;
-
-
-    private Node<Vector2Int> startNode; 
+    private Node<Vector2Int> startNode;
     private Node<Vector2Int> destinationNode;
-    
-    
-
-    Traveler()
+    public Traveler()
     {
-        pathfinder = new AStarPathfinder<Node<Vector2Int>>();   
-        
+        pathfinder = new AStarPathfinder<Node<Vector2Int>>();
+        startNode = new Node<Vector2Int>();
+        destinationNode = new Node<Vector2Int>();
+        {
+            //startNode = new Node<Vector2Int>();
+            //startNode.SetCoordinate(new Vector2Int(0,0));        
+            //destinationNode = new Node<Vector2Int>();
+            //GoldMine nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
+            //destinationNode.SetCoordinate(new Vector2Int(nearestMine.Position.x, nearestMine.Position.y));
+            //List<Node<Vector2Int>> path = pathfinder.FindPath(startNode, destinationNode, GV.graph.nodes);
 
-
-        //startNode = new Node<Vector2Int>();
-        //startNode.SetCoordinate(new Vector2Int(0,0));        
-        //destinationNode = new Node<Vector2Int>();
-        //GoldMine nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
-        //destinationNode.SetCoordinate(new Vector2Int(nearestMine.Position.x, nearestMine.Position.y));
-        //List<Node<Vector2Int>> path = pathfinder.FindPath(startNode, destinationNode, GV.graph.nodes);
-
-        //StartCoroutine(Move(path));
+            //StartCoroutine(Move(path));
+        }
     }
 
     public List<Node<Vector2Int>> FindPath(Node<Vector2Int> start, Node<Vector2Int> destination, GraphView gv) {
-        return pathfinder.FindPath(startNode, destinationNode, gv.graph.nodes);
+        GoldMine nearestMine = gv.mineManager.FindNearest(startNode.GetCoordinate());
+        destination.SetCoordinate(new Vector2Int(nearestMine.Position.x, nearestMine.Position.y));
+        return pathfinder.FindPath(startNode, destination, gv.graph.nodes);
     }
 
     public IEnumerator Move(List<Node<Vector2Int>> path) 

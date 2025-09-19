@@ -10,12 +10,16 @@ class Miner : MonoBehaviour
     [SerializeField] GoldMine goldMine;
     [SerializeField] Townhall townhall;
     InventoryData inventoryData = new InventoryData();
+
+    Node<Vector2Int> graphPos = new Node<Vector2Int>();
+    [SerializeField] GraphView graphView;
     public enum State
     {
         MoveToTarget,
         MoveToTown,
         Depositing,
-        Mining
+        Mining,
+        Idle
     }
 
     public enum Flags
@@ -23,6 +27,7 @@ class Miner : MonoBehaviour
         OnInventoryEmpty,
         OnInventoryFull,
         OnTargetReach,
+        OnFuckYou
     }
 
 
@@ -30,17 +35,20 @@ class Miner : MonoBehaviour
 
     public void Start()
     {
-        minerFsm = new FSM<State, Flags>(State.MoveToTarget);
+        graphPos.SetCoordinate(new Vector2Int(0,0));
+        minerFsm = new FSM<State, Flags>(State.Idle);
 
-        minerFsm.AddState<MinerMovingState>(State.MoveToTarget, onTickParameters: () => new object[] {Time.deltaTime});
+        minerFsm.AddState<MinerMovingState>(State.MoveToTarget, onTickParameters: () => new object[] {this.transform, Time.deltaTime}, onEnterParameters:()=>new object[] {graphPos, graphView});
+        minerFsm.AddState<MinerIdle>(State.Idle);
         minerFsm.AddState<MinerMoveToTown>(State.MoveToTown, onTickParameters: () => new object[] { });
         minerFsm.AddState<MinerDepositingState>(State.Depositing, onTickParameters: () => new object[] { townhall, inventoryData}, null, onExitParameters: () => new object[] { this });
         minerFsm.AddState<MinerMiningState>(State.Mining, onTickParameters: () => new object[] { goldMine, miningRate, inventoryData}, null, onExitParameters: () => new object[] { this});
 
         minerFsm.SetTransition(State.MoveToTarget, Flags.OnTargetReach, State.Mining);
-        minerFsm.SetTransition(State.Mining, Flags.OnInventoryFull, State.MoveToTown);
-        minerFsm.SetTransition(State.MoveToTown, Flags.OnTargetReach, State.Depositing);
-        minerFsm.SetTransition(State.Depositing, Flags.OnInventoryEmpty, State.MoveToTarget);
+        minerFsm.SetTransition(State.Idle, Flags.OnFuckYou, State.MoveToTarget);
+        //minerFsm.SetTransition(State.Mining, Flags.OnInventoryFull, State.MoveToTown);
+        //minerFsm.SetTransition(State.MoveToTown, Flags.OnTargetReach, State.Depositing);
+        //minerFsm.SetTransition(State.Depositing, Flags.OnInventoryEmpty, State.MoveToTarget);
     }
 
     private void Update()
