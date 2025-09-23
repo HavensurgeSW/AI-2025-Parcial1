@@ -15,7 +15,8 @@ public class GraphView : MonoBehaviour
             // create a default manager so GetMineAt calls are safe in Play mode
             mineManager = new GoldMineManager();
             Debug.Log("Created MineManager");
-            mineManager.CreateMines(3, 1000, new Vector2Int(mapDimensions.x, mapDimensions.y));
+            mineManager.CreateMines(1, 1000, new Vector2Int(mapDimensions.x, mapDimensions.y));
+            mineManager.mines[0].CallExist();
         }
         InstantiateTiles();
     }
@@ -36,7 +37,7 @@ public class GraphView : MonoBehaviour
             else
                 Gizmos.color = Color.green;
             
-            Gizmos.DrawWireSphere(new Vector3(node.GetCoordinate().x, node.GetCoordinate().y), 0.1f);
+            Gizmos.DrawWireSphere(new Vector3(node.GetCoordinate().x, node.GetCoordinate().y, 1), 0.1f);
         }
     }
     public void InstantiateTiles()

@@ -25,6 +25,10 @@ public class GoldMine
         currentGold -= mined;
         return mined;
     }
+    public void CallExist()
+    {
+        Debug.Log("Mine exists");
+    }
 
     public bool isDepleted => currentGold <= 0;
 }

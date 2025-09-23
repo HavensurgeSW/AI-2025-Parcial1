@@ -18,7 +18,7 @@ public class MinerMovingState : State
     //Game movement
     private Transform minerTransform;
     private int currentPathIndex;
-    private float speed = 1f;
+    private float speed = 5f;
     private float nodeReachDistance = 0.1f;
     public override BehaviourActions GetOnEnterBehaviours(params object[] parameters)
     {
@@ -163,35 +163,37 @@ public class MinerDepositingState : State
 public class MinerMiningState : State
 {
     public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
-    {
-        Debug.Log("Im mining!");
-        GoldMine goldMine = parameters[0] as GoldMine;
-        int miningRate = (int)parameters[1];
+    {        
+        GoldMine goldMine = parameters[0] as GoldMine;        
+        int miningRate = (int)parameters[1];        
         InventoryData inv = parameters[2] as InventoryData;
+        int posX = (int)parameters[3];
+        int postY = (int)parameters[4];
 
 
         BehaviourActions behaviourActions = new BehaviourActions();
-
-
         behaviourActions.AddMultiThreadableBehaviour(0, () =>
         {
+            //goldMine.CallExist();
             //int minedAmount = goldMine.Mine(miningRate);
+            Debug.Log("Miner at position: " + posX + ", " + postY);
+            Debug.Log("Mining...");
             //inv.inventory+= minedAmount;
         });
 
         behaviourActions.SetTransitionBehaviour(() =>
         {
 
-            if (inv.inventory >= inv.maxInventory)
-            {
-                OnFlag?.Invoke(Miner.Flags.OnInventoryFull);
-            }
-            else if (goldMine.isDepleted)
-            {
+            //if (inv.inventory >= inv.maxInventory)
+            //{
+            //    OnFlag?.Invoke(Miner.Flags.OnInventoryFull);
+            //}
+            //else if (goldMine.isDepleted)
+            //{
 
-                // OnFlag?.Invoke(MinerFlags.OnMineDepleted);
-                OnFlag?.Invoke(Miner.Flags.OnInventoryFull);
-            }
+            //    // OnFlag?.Invoke(MinerFlags.OnMineDepleted);
+            //    OnFlag?.Invoke(Miner.Flags.OnInventoryFull);
+            //}
         });
 
         return behaviourActions;
