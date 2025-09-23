@@ -58,6 +58,13 @@ public class MinerMovingState : State
 
             if (Vector3.Distance(minerTransform.position, targetPos) <= nodeReachDistance)
             {
+                // Update the shared Node reference (Miner.graphPos) so Miner sees the new coordinate.
+                // startNode was passed from Miner and is the same reference as Miner.graphPos.
+                if (startNode != null)
+                {
+                    startNode.SetCoordinate(coord);
+                }
+
                 currentPathIndex++;
                 Debug.Log("Reached Node: " + coord.x + " " + coord.y);
             }
@@ -74,6 +81,12 @@ public class MinerMovingState : State
 
             if (currentPathIndex >= path.Count)
             {
+                // Ensure final graphPos coordinate reflects the path's last node
+                if (startNode != null && path.Count > 0)
+                {
+                    startNode.SetCoordinate(path[path.Count - 1].GetCoordinate());
+                }
+
                 Debug.Log("Reached Target");
                 OnFlag?.Invoke(Miner.Flags.OnTargetReach);
             }
@@ -174,26 +187,25 @@ public class MinerMiningState : State
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMultiThreadableBehaviour(0, () =>
         {
-            //goldMine.CallExist();
-            //int minedAmount = goldMine.Mine(miningRate);
+            int minedAmount = goldMine.Mine(miningRate);
             Debug.Log("Miner at position: " + posX + ", " + postY);
             Debug.Log("Mining...");
-            //inv.inventory+= minedAmount;
+            inv.inventory+= minedAmount;
         });
 
         behaviourActions.SetTransitionBehaviour(() =>
         {
 
-            //if (inv.inventory >= inv.maxInventory)
-            //{
-            //    OnFlag?.Invoke(Miner.Flags.OnInventoryFull);
-            //}
-            //else if (goldMine.isDepleted)
-            //{
+            if (inv.inventory >= inv.maxInventory)
+            {
+                OnFlag?.Invoke(Miner.Flags.OnInventoryFull);
+            }
+            else if (goldMine.isDepleted)
+            {
 
-            //    // OnFlag?.Invoke(MinerFlags.OnMineDepleted);
-            //    OnFlag?.Invoke(Miner.Flags.OnInventoryFull);
-            //}
+                // OnFlag?.Invoke(MinerFlags.OnMineDepleted);
+                OnFlag?.Invoke(Miner.Flags.OnInventoryFull);
+            }
         });
 
         return behaviourActions;
