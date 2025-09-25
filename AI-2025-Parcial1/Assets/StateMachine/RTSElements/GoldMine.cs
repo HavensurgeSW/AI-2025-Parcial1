@@ -12,13 +12,14 @@ public class GoldMine
         maxGold = 1000;
         currentGold = maxGold;
         Debug.Log("GoldMine created with no position. DEFAULT CONSTRUCTOR");
+        foodStored = 1000;
     }
     public GoldMine(int maxGold, Vector2Int position)
     {
         this.maxGold = maxGold;
         this.currentGold = maxGold;
         this.Position = position;
-        this.foodStored = 100;
+        this.foodStored = 1000;
     }
     public int Mine(int amount)
     {

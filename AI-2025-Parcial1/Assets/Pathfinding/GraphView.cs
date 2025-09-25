@@ -4,9 +4,7 @@ public class GraphView : MonoBehaviour
 {
     public Vector2IntGraph<Node<Vector2Int>> graph;
     public GoldMineManager mineManager; // optional, set in inspector or left null
-    public Townhall townhall; // optional, set in inspector or left null
-
-    [SerializeField]private Vector2Int mapDimensions = new Vector2Int(10,10);
+    
     [SerializeField]private GameObject tilePrefab;
     //void Awake()
     //{
@@ -48,7 +46,6 @@ public class GraphView : MonoBehaviour
         {
             Vector2Int coord = node.GetCoordinate();
             GameObject tile = Instantiate(tilePrefab, new Vector3(coord.x, coord.y, 1), Quaternion.identity, this.transform);
-
           
             var sr = tilePrefab.GetComponent<SpriteRenderer>();
             if (node.IsBlocked())
@@ -63,5 +60,12 @@ public class GraphView : MonoBehaviour
 
     public void CallExist() { 
         Debug.Log("GV exists");
+    }
+
+    public void AssignMineManager(GoldMineManager gmm) { 
+        mineManager = gmm;
+    }
+    public void AssignTile(GameObject go) { 
+        tilePrefab = go;
     }
 }

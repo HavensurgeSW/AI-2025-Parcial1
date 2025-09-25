@@ -5,12 +5,13 @@ using UnityEngine;
 
 class Miner : MonoBehaviour
 {    
-    int miningRate = 10;
-    [SerializeField] GoldMine goldMine;
-    [SerializeField] Townhall townhall;
+    int miningRate = 1;
+
+    GoldMine goldMine;
+    Townhall townhall = new Townhall(new Vector2Int(0,0));
     InventoryData inventoryData = new InventoryData();
 
-    [SerializeField] GraphView GV;
+    public GraphView GV;
     Node<Vector2Int> graphPos = new Node<Vector2Int>();
     Node<Vector2Int> targetPos = new Node<Vector2Int>();
     Node<Vector2Int> home = new Node<Vector2Int>();
@@ -43,10 +44,10 @@ class Miner : MonoBehaviour
         minerFsm = new FSM<State, Flags>(State.Idle);
         
 
-        minerFsm.AddState<MinerMovingState>(State.MoveToTarget, onTickParameters: () => new object[] {this.transform, Time.deltaTime}, onEnterParameters:()=>new object[] {graphPos, targetPos, GV});
-        minerFsm.AddState<MinerMoveToTown>(State.MoveToTarget, onTickParameters: () => new object[] {this.transform, Time.deltaTime}, onEnterParameters:()=>new object[] {graphPos, home, GV});
         minerFsm.AddState<MinerIdle>(State.Idle);
-        minerFsm.AddState<MinerMiningState>(State.Mining, onTickParameters: () => new object[] { GV.mineManager.GetMineAt(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y)), miningRate, inventoryData}, null, onExitParameters: () => new object[] { this});
+        minerFsm.AddState<MinerMovingState>(State.MoveToTarget, onTickParameters: () => new object[] {this.transform, Time.deltaTime}, onEnterParameters:()=>new object[] {graphPos, targetPos, GV});
+        minerFsm.AddState<MinerMoveToTown>(State.MoveToTown, onTickParameters: () => new object[] {this.transform, Time.deltaTime}, onEnterParameters:()=>new object[] {graphPos, home, GV});
+        minerFsm.AddState<MinerMiningState>(State.Mining, onTickParameters: () => new object[] { GV.mineManager.GetMineAt(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y)), miningRate, inventoryData});
         minerFsm.AddState<MinerDepositingState>(State.Depositing, onTickParameters: () => new object[] { townhall, inventoryData}, null, onExitParameters: () => new object[] { this });
 
         minerFsm.SetTransition(State.Idle, Flags.OnFuckYou, State.MoveToTarget);
@@ -59,11 +60,6 @@ class Miner : MonoBehaviour
     private void Update()
     {
         minerFsm.Tick();
-    }
-
-    public void SetTargetToHome()
-    {
-        targetPos.SetCoordinate(home.GetCoordinate());
     }
     public void SetTargetToClosestMine() { 
         targetPos.SetCoordinate(GV.mineManager.FindNearest(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y)).Position);

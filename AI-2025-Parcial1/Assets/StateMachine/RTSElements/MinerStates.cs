@@ -30,11 +30,14 @@ public class MinerMovingState : State
         destination = parameters[1] as Node<Vector2Int>;
         GV = parameters[2] as GraphView;
         
-        GoldMine nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
+        GoldMine nearestMine = new GoldMine();
+        nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
         destination.SetCoordinate(new Vector2Int(nearestMine.Position.x, nearestMine.Position.y));      
 
         path = traveler.FindPath(startNode, destination , GV);
         currentPathIndex = 0;
+
+        Debug.Log("Finished enter behaviours");
 
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMainThreadableBehaviour(0, () =>
@@ -129,7 +132,7 @@ public class MinerMoveToTown : State
 
         path = traveler.FindPath(startNode, destination, GV);
         currentPathIndex = 0;
-
+        Debug.Log("Heading home!");
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
@@ -244,7 +247,7 @@ public class MinerMiningState : State
 
         behaviourActions.SetTransitionBehaviour(() =>
         {
-
+            Debug.Log("Gold in inventory: " + inv.inventory);
             if (inv.inventory >= inv.maxInventory)
             {
                 OnFlag?.Invoke(Miner.Flags.OnInventoryFull);
@@ -257,18 +260,6 @@ public class MinerMiningState : State
             }
         });
 
-        return behaviourActions;
-    }
-    public override BehaviourActions GetOnExitBehaviours(params object[] parameters)
-    {
-        Debug.Log("Inventory full!");
-        Miner miner = parameters[0] as Miner;
-        BehaviourActions behaviourActions = new BehaviourActions();
-        behaviourActions.AddMainThreadableBehaviour(0, () =>
-        {
-
-            //miner.moveTarget = miner.townLocation;
-        });
         return behaviourActions;
     }
 }
