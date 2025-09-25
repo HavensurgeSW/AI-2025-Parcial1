@@ -26,6 +26,7 @@ public class GameManager : MonoBehaviour
 
         Instantiate(miner, new Vector3(0, 0, 0), Quaternion.identity);
         miner.GetComponent<Miner>().GV = GV;
+        miner.GetComponent<Miner>().townhall = TH;
     }
 
     

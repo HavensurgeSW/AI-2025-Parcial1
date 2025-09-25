@@ -11,6 +11,11 @@ public class Townhall
     {
         Position = position;
     }
+
+    public Townhall() 
+    {
+       
+    }
     public int Deposit(int amount)
     {
         goldStored += amount;

@@ -36,9 +36,6 @@ public class MinerMovingState : State
 
         path = traveler.FindPath(startNode, destination , GV);
         currentPathIndex = 0;
-
-        Debug.Log("Finished enter behaviours");
-
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
@@ -76,7 +73,7 @@ public class MinerMovingState : State
                     startNode.SetCoordinate(coord);
                 }
                 currentPathIndex++;
-                Debug.Log("Snapped To Node: " + coord.x + " " + coord.y);
+              
                 snapTimer -= snapInterval;
             }
 
@@ -99,7 +96,7 @@ public class MinerMovingState : State
                     startNode.SetCoordinate(path[path.Count - 1].GetCoordinate());
                 }
 
-                Debug.Log("Reached Target");
+                Debug.Log("Reached Mine");
                 OnFlag?.Invoke(Miner.Flags.OnTargetReach);
             }
         });
@@ -125,6 +122,7 @@ public class MinerMoveToTown : State
 
     public override BehaviourActions GetOnEnterBehaviours(params object[] parameters)
     {
+        Debug.Log("Heading home!");
 
         startNode = parameters[0] as Node<Vector2Int>;
         destination = parameters[1] as Node<Vector2Int>;
@@ -132,7 +130,6 @@ public class MinerMoveToTown : State
 
         path = traveler.FindPath(startNode, destination, GV);
         currentPathIndex = 0;
-        Debug.Log("Heading home!");
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
@@ -169,17 +166,47 @@ public class MinerMoveToTown : State
                     startNode.SetCoordinate(coord);
                 }
                 currentPathIndex++;
-                Debug.Log("Snapped To Node: " + coord.x + " " + coord.y);
                 snapTimer -= snapInterval;
             }
 
         });
 
+        behaviourActions.SetTransitionBehaviour(() =>
+        {
+            if (path == null || path.Count == 0)
+            {
+                OnFlag?.Invoke(Miner.Flags.OnTargetReach);
+                return;
+            }
+
+            if (currentPathIndex >= path.Count)
+            {
+                // Ensure final graphPos coordinate reflects the path's last node
+                if (startNode != null && path.Count > 0)
+                {
+                    startNode.SetCoordinate(path[path.Count - 1].GetCoordinate());
+                }
+
+                Debug.Log("Reached Home");
+                OnFlag?.Invoke(Miner.Flags.OnTargetReach);
+            }
+        });
+
         return behaviourActions;
+
     }
+
+
 }
 public class MinerDepositingState : State
 {
+    public override BehaviourActions GetOnEnterBehaviours(params object[] parameters) {
+        Debug.Log("Depositing gold...");
+
+        BehaviourActions behaviourActions = new BehaviourActions();
+        return behaviourActions;
+    }
+
     public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
     {
         Townhall townhall = parameters[0] as Townhall;

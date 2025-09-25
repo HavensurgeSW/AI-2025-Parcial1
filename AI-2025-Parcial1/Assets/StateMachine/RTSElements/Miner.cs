@@ -7,8 +7,7 @@ class Miner : MonoBehaviour
 {    
     int miningRate = 1;
 
-    GoldMine goldMine;
-    Townhall townhall = new Townhall(new Vector2Int(0,0));
+    public Townhall townhall = new Townhall();
     InventoryData inventoryData = new InventoryData();
 
     public GraphView GV;
@@ -54,7 +53,7 @@ class Miner : MonoBehaviour
         minerFsm.SetTransition(State.MoveToTarget, Flags.OnTargetReach, State.Mining);
         minerFsm.SetTransition(State.Mining, Flags.OnInventoryFull, State.MoveToTown);
         minerFsm.SetTransition(State.MoveToTown, Flags.OnTargetReach, State.Depositing);
-        //minerFsm.SetTransition(State.Depositing, Flags.OnInventoryEmpty, State.MoveToTarget);
+        minerFsm.SetTransition(State.Depositing, Flags.OnInventoryEmpty, State.MoveToTarget);
     }
 
     private void Update()
