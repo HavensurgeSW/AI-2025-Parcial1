@@ -26,13 +26,12 @@ public class Traveler
     }
 
     public List<Node<Vector2Int>> FindPath(Node<Vector2Int> start, Node<Vector2Int> destination, GraphView gv) {
-        GoldMine nearestMine = gv.mineManager.FindNearest(startNode.GetCoordinate());
-        destination.SetCoordinate(new Vector2Int(nearestMine.Position.x, nearestMine.Position.y));
-        return pathfinder.FindPath(startNode, destination, gv.graph.nodes);
+        return pathfinder.FindPath(start, destination, gv.graph.nodes);
     }
 
     public IEnumerator Move(List<Node<Vector2Int>> path) 
     {
+        //LEGACY, Ya no se usa.
         foreach (Node<Vector2Int> node in path)
         {
             //transform.position = new Vector3(node.GetCoordinate().x, node.GetCoordinate().y);

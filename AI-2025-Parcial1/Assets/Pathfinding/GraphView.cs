@@ -4,22 +4,24 @@ public class GraphView : MonoBehaviour
 {
     public Vector2IntGraph<Node<Vector2Int>> graph;
     public GoldMineManager mineManager; // optional, set in inspector or left null
+    public Townhall townhall; // optional, set in inspector or left null
 
     [SerializeField]private Vector2Int mapDimensions = new Vector2Int(10,10);
     [SerializeField]private GameObject tilePrefab;
-    void Awake()
-    {
-        graph = new Vector2IntGraph<Node<Vector2Int>>(mapDimensions.x, mapDimensions.y);
-        if (mineManager == null)
-        {
-            // create a default manager so GetMineAt calls are safe in Play mode
-            mineManager = new GoldMineManager();
-            Debug.Log("Created MineManager");
-            mineManager.CreateMines(1, 1000, new Vector2Int(mapDimensions.x, mapDimensions.y));
-            mineManager.mines[0].CallExist();
-        }
-        InstantiateTiles();
-    }
+    //void Awake()
+    //{
+    //    graph = new Vector2IntGraph<Node<Vector2Int>>(mapDimensions.x, mapDimensions.y);
+    //    if (mineManager == null)
+    //    {
+    //        // create a default manager so GetMineAt calls are safe in Play mode
+    //        mineManager = new GoldMineManager();
+    //        Debug.Log("Created MineManager");
+    //        mineManager.CreateMines(1, 1000, new Vector2Int(mapDimensions.x, mapDimensions.y));
+    //        mineManager.mines[0].CallExist();
+    //    }
+    //    InstantiateTiles();
+
+    //}
 
     private void OnDrawGizmos()
     {
@@ -47,7 +49,7 @@ public class GraphView : MonoBehaviour
             Vector2Int coord = node.GetCoordinate();
             GameObject tile = Instantiate(tilePrefab, new Vector3(coord.x, coord.y, 1), Quaternion.identity, this.transform);
 
-            // Cambia el color según el estado del nodo
+          
             var sr = tilePrefab.GetComponent<SpriteRenderer>();
             if (node.IsBlocked())
                 sr.color = Color.red;

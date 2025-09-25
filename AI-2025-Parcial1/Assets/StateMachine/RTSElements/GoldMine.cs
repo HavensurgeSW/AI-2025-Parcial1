@@ -18,12 +18,19 @@ public class GoldMine
         this.maxGold = maxGold;
         this.currentGold = maxGold;
         this.Position = position;
+        this.foodStored = 100;
     }
     public int Mine(int amount)
     {
         int mined = Mathf.Min(amount, currentGold);
         currentGold -= mined;
         return mined;
+    }
+    public int RetrieveFood(int amount)
+    {
+        int retrieved = Mathf.Min(amount, foodStored);
+        foodStored -= retrieved;
+        return retrieved;
     }
     public void CallExist()
     {

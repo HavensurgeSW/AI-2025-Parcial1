@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEditor.Rendering;
 using UnityEngine;
 
 
@@ -12,22 +13,27 @@ public class MinerMovingState : State
     private GraphView GV;
     private Traveler traveler = new Traveler();
     private Node<Vector2Int> startNode = new Node<Vector2Int>();
-    private Node<Vector2Int> destinationNode = new Node<Vector2Int>();
+    private Node<Vector2Int> destination = new Node<Vector2Int>();
     List<Node<Vector2Int>> path = new List<Node<Vector2Int>>();
 
     //Game movement
     private Transform minerTransform;
     private int currentPathIndex;
-    private float speed = 5f;
-    private float nodeReachDistance = 0.1f;
+    // Snapping configuration
+    private float snapInterval = 0.5f;
+    private float snapTimer = 0f;
+
     public override BehaviourActions GetOnEnterBehaviours(params object[] parameters)
     {
       
-        startNode = parameters[0] as Node<Vector2Int>;
-        //destinationNode = parameters[1] as Node<Vector2Int>;
-        GV = parameters[1] as GraphView;
-     
-        path = traveler.FindPath(startNode, destinationNode, GV);
+        startNode = parameters[0] as Node<Vector2Int>;   
+        destination = parameters[1] as Node<Vector2Int>;
+        GV = parameters[2] as GraphView;
+        
+        GoldMine nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
+        destination.SetCoordinate(new Vector2Int(nearestMine.Position.x, nearestMine.Position.y));      
+
+        path = traveler.FindPath(startNode, destination , GV);
         currentPathIndex = 0;
 
         BehaviourActions behaviourActions = new BehaviourActions();
@@ -48,28 +54,31 @@ public class MinerMovingState : State
 
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
-            Node<Vector2Int> targetNode = new Node<Vector2Int>();
-            Vector2Int coord = new Vector2Int();
-
-            targetNode = path[currentPathIndex];
-            coord = targetNode.GetCoordinate();
-            Vector3 targetPos = new Vector3(coord.x, coord.y, minerTransform.position.z);
-            minerTransform.position = Vector3.MoveTowards(minerTransform.position, targetPos, speed * deltaTime);
-
-            if (Vector3.Distance(minerTransform.position, targetPos) <= nodeReachDistance)
+            
+            snapTimer += deltaTime;
+            
+            if (snapTimer < snapInterval)
+                return;
+            
+            while (snapTimer >= snapInterval && currentPathIndex < path.Count)
             {
-                // Update the shared Node reference (Miner.graphPos) so Miner sees the new coordinate.
-                // startNode was passed from Miner and is the same reference as Miner.graphPos.
+                Node<Vector2Int> targetNode = path[currentPathIndex];
+                Vector2Int coord = targetNode.GetCoordinate();
+                Vector3 targetPos = new Vector3(coord.x, coord.y, minerTransform.position.z);
+                
+                minerTransform.position = targetPos;
+
                 if (startNode != null)
                 {
                     startNode.SetCoordinate(coord);
                 }
-
                 currentPathIndex++;
-                Debug.Log("Reached Node: " + coord.x + " " + coord.y);
+                Debug.Log("Snapped To Node: " + coord.x + " " + coord.y);
+                snapTimer -= snapInterval;
             }
 
         });
+
 
         behaviourActions.SetTransitionBehaviour(() =>
         {
@@ -97,36 +106,70 @@ public class MinerMovingState : State
 
 public class MinerMoveToTown : State
 {
-    private Transform actualTarget;
+    //Pathfinding 
+    private GraphView GV;
+    private Traveler traveler = new Traveler();
+    private Node<Vector2Int> startNode = new Node<Vector2Int>();
+    private Node<Vector2Int> destination = new Node<Vector2Int>();
+    List<Node<Vector2Int>> path = new List<Node<Vector2Int>>();
+
+    //Game movement
+    private Transform minerTransform;
+    private int currentPathIndex;
+    // Snapping configuration
+    private float snapInterval = 0.5f;
+    private float snapTimer = 0f;
+
+    public override BehaviourActions GetOnEnterBehaviours(params object[] parameters)
+    {
+
+        startNode = parameters[0] as Node<Vector2Int>;
+        destination = parameters[1] as Node<Vector2Int>;
+        GV = parameters[2] as GraphView;
+
+        path = traveler.FindPath(startNode, destination, GV);
+        currentPathIndex = 0;
+
+        BehaviourActions behaviourActions = new BehaviourActions();
+        behaviourActions.AddMainThreadableBehaviour(0, () =>
+        {
+
+        });
+        return behaviourActions;
+    }
 
     public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
     {
-        actualTarget = parameters[0] as Transform; // townLocation
-        Transform minerTransform = parameters[1] as Transform;
-        float speed = (float)parameters[2];
-        float reachDistance = (float)parameters[3];
-        float deltaTime = (float)parameters[4];
-
         BehaviourActions behaviourActions = new BehaviourActions();
+        minerTransform = parameters[0] as Transform;
+        float deltaTime = (float)parameters[1];
+        //speed = (float)parameters[1];
 
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
-            if (actualTarget != null && minerTransform != null)
-            {
-                Vector3 direction = (actualTarget.position - minerTransform.position).normalized;
-                minerTransform.position += direction * speed * deltaTime;
-            }
-        });
 
-        behaviourActions.SetTransitionBehaviour(() =>
-        {
-            if (actualTarget != null && minerTransform != null)
+            snapTimer += deltaTime;
+
+            if (snapTimer < snapInterval)
+                return;
+
+            while (snapTimer >= snapInterval && currentPathIndex < path.Count)
             {
-                if (Vector3.Distance(minerTransform.position, actualTarget.position) <= reachDistance)
+                Node<Vector2Int> targetNode = path[currentPathIndex];
+                Vector2Int coord = targetNode.GetCoordinate();
+                Vector3 targetPos = new Vector3(coord.x, coord.y, minerTransform.position.z);
+
+                minerTransform.position = targetPos;
+
+                if (startNode != null)
                 {
-                    OnFlag?.Invoke(Miner.Flags.OnTargetReach);
+                    startNode.SetCoordinate(coord);
                 }
+                currentPathIndex++;
+                Debug.Log("Snapped To Node: " + coord.x + " " + coord.y);
+                snapTimer -= snapInterval;
             }
+
         });
 
         return behaviourActions;
@@ -167,7 +210,7 @@ public class MinerDepositingState : State
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
-            //miner.moveTarget = miner.mineLocation;
+            miner.SetTargetToClosestMine();
         });
         return behaviourActions;
     }
@@ -180,17 +223,23 @@ public class MinerMiningState : State
         GoldMine goldMine = parameters[0] as GoldMine;        
         int miningRate = (int)parameters[1];        
         InventoryData inv = parameters[2] as InventoryData;
-        int posX = (int)parameters[3];
-        int postY = (int)parameters[4];
 
+        int hunger = 0;
 
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMultiThreadableBehaviour(0, () =>
         {
-            int minedAmount = goldMine.Mine(miningRate);
-            Debug.Log("Miner at position: " + posX + ", " + postY);
             Debug.Log("Mining...");
-            inv.inventory+= minedAmount;
+            if (hunger >= 3)
+            {
+                if (goldMine.RetrieveFood(1) > 0)
+                    hunger = 0;
+            }
+            else { 
+                int minedAmount = goldMine.Mine(miningRate);
+                inv.inventory+= minedAmount;
+                hunger++;        
+            }
         });
 
         behaviourActions.SetTransitionBehaviour(() =>
