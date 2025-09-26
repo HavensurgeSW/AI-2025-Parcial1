@@ -1387,10 +1387,10 @@ RectTransform:
   - {fileID: 483257796}
   m_Father: {fileID: 1682586986}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5481579, y: 0.70519483}
-  m_AnchorMax: {x: 0.7805381, y: 0.75980526}
-  m_AnchoredPosition: {x: -1.5, y: -40.8}
-  m_SizeDelta: {x: 1, y: -1}
+  m_AnchorMin: {x: 0.5466959, y: 0.60140264}
+  m_AnchorMax: {x: 0.77900004, y: 0.6534026}
+  m_AnchoredPosition: {x: -0.5, y: -0.29999924}
+  m_SizeDelta: {x: 1, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1268576667
 MonoBehaviour:
@@ -1436,8 +1436,8 @@ MonoBehaviour:
   m_FillRect: {fileID: 1438468006}
   m_HandleRect: {fileID: 1795772138}
   m_Direction: 0
-  m_MinValue: 0.5
-  m_MaxValue: 1.5
+  m_MinValue: 0.87
+  m_MaxValue: 2
   m_WholeNumbers: 0
   m_Value: 1
   m_OnValueChanged:
@@ -2205,7 +2205,7 @@ MonoBehaviour:
   mapX: {fileID: 1727274715}
   mapY: {fileID: 1928000264}
   mineAmount: {fileID: 2137961048}
-  tileSpacingSlider: {fileID: 0}
+  tileSpacingSlider: {fileID: 1268576667}
 --- !u!4 &1763446135
 Transform:
   m_ObjectHideFlags: 0
