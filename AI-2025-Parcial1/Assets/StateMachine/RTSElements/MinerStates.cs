@@ -53,19 +53,18 @@ public class MinerMovingState : State
 
 
         behaviourActions.AddMainThreadableBehaviour(0, () =>
-        {
-            
+        {            
             snapTimer += deltaTime;
             
             if (snapTimer < snapInterval)
                 return;
-            
+
             while (snapTimer >= snapInterval && currentPathIndex < path.Count)
             {
                 Node<Vector2Int> targetNode = path[currentPathIndex];
                 Vector2Int coord = targetNode.GetCoordinate();
-                Vector3 targetPos = new Vector3(coord.x, coord.y, minerTransform.position.z);
-                
+                Vector3 targetPos = new Vector3(coord.x * GV.TileSpacing, coord.y * GV.TileSpacing, minerTransform.position.z);
+
                 minerTransform.position = targetPos;
 
                 if (startNode != null)
@@ -73,10 +72,9 @@ public class MinerMovingState : State
                     startNode.SetCoordinate(coord);
                 }
                 currentPathIndex++;
-              
+
                 snapTimer -= snapInterval;
             }
-
         });
 
 
@@ -157,7 +155,7 @@ public class MinerMoveToTown : State
             {
                 Node<Vector2Int> targetNode = path[currentPathIndex];
                 Vector2Int coord = targetNode.GetCoordinate();
-                Vector3 targetPos = new Vector3(coord.x, coord.y, minerTransform.position.z);
+                Vector3 targetPos = new Vector3(coord.x * GV.TileSpacing, coord.y * GV.TileSpacing, minerTransform.position.z);
 
                 minerTransform.position = targetPos;
 
@@ -166,6 +164,7 @@ public class MinerMoveToTown : State
                     startNode.SetCoordinate(coord);
                 }
                 currentPathIndex++;
+
                 snapTimer -= snapInterval;
             }
 

@@ -19,7 +19,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] TMP_InputField mapX;
     [SerializeField] TMP_InputField mapY;
     [SerializeField] TMP_InputField mineAmount;
-    [SerializeField] private Slider tileSpacingSlider;
+    [SerializeField] Slider tileSpacingSlider;
 
     private void Awake()
     {
@@ -29,7 +29,8 @@ public class GameManager : MonoBehaviour
         if (!int.TryParse(mapY.text, out y))
             y = 10;
         if (!int.TryParse(mineAmount.text, out mines))
-            mines = 1;
+            mines = 1;      
+
 
         mapDimensions = new Vector2Int(x, y);   
 
@@ -38,6 +39,7 @@ public class GameManager : MonoBehaviour
         MM = new GoldMineManager();
         MM.CreateMines(mines, 1000, new Vector2Int(mapDimensions.x, mapDimensions.y));
         GV.graph = graph;
+        GV.SetSpacing(tileSpacingSlider.value);
         GV.AssignMineManager(MM);
         GV.AssignTile(tilePrefab);
         GV.InstantiateTiles();

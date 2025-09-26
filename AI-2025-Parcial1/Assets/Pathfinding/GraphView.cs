@@ -5,7 +5,11 @@ public class GraphView : MonoBehaviour
     public Vector2IntGraph<Node<Vector2Int>> graph;
     public GoldMineManager mineManager;
     
-    [SerializeField]private GameObject tilePrefab; 
+    [SerializeField]private GameObject tilePrefab;
+    float tileSpacing = 1.0f;
+
+    public float TileSpacing { get { return tileSpacing; } }
+
 
     private void OnDrawGizmos()
     {
@@ -13,7 +17,6 @@ public class GraphView : MonoBehaviour
             return;
         foreach (Node<Vector2Int> node in graph.nodes)
         {
-            //Si hay una mina, pinta el Gizmo amarillo
             if (mineManager != null && mineManager.GetMineAt(node.GetCoordinate()) != null)
             {
                 Gizmos.color = Color.yellow;
@@ -21,9 +24,10 @@ public class GraphView : MonoBehaviour
             else if (node.IsBlocked())
                 Gizmos.color = Color.red;
             else
-                Gizmos.color = Color.green;
-            
-            Gizmos.DrawWireSphere(new Vector3(node.GetCoordinate().x, node.GetCoordinate().y, 1), 0.1f);
+                Gizmos.color = Color.gray;
+
+            Vector2Int coord = node.GetCoordinate();
+            Gizmos.DrawWireSphere(new Vector3(coord.x * tileSpacing, coord.y * tileSpacing, 1), 0.1f);
         }
     }
     public void InstantiateTiles()
@@ -31,8 +35,8 @@ public class GraphView : MonoBehaviour
         foreach (var node in graph.nodes)
         {
             Vector2Int coord = node.GetCoordinate();
-            GameObject tile = Instantiate(tilePrefab, new Vector3(coord.x, coord.y, 1), Quaternion.identity, this.transform);
-          
+            Vector3 pos = new Vector3(coord.x * tileSpacing, coord.y * tileSpacing, 1);
+            GameObject tile = Instantiate(tilePrefab, pos, Quaternion.identity, this.transform);
 
             var sr = tilePrefab.GetComponent<SpriteRenderer>();
             if (node.IsBlocked())
@@ -72,5 +76,8 @@ public class GraphView : MonoBehaviour
     }
     public void AssignTile(GameObject go) { 
         tilePrefab = go;
+    }
+    public void SetSpacing(float s) {
+        tileSpacing = s;
     }
 }
