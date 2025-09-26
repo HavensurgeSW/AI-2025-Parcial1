@@ -3,23 +3,9 @@ using UnityEngine;
 public class GraphView : MonoBehaviour
 {
     public Vector2IntGraph<Node<Vector2Int>> graph;
-    public GoldMineManager mineManager; // optional, set in inspector or left null
+    public GoldMineManager mineManager;
     
-    [SerializeField]private GameObject tilePrefab;
-    //void Awake()
-    //{
-    //    graph = new Vector2IntGraph<Node<Vector2Int>>(mapDimensions.x, mapDimensions.y);
-    //    if (mineManager == null)
-    //    {
-    //        // create a default manager so GetMineAt calls are safe in Play mode
-    //        mineManager = new GoldMineManager();
-    //        Debug.Log("Created MineManager");
-    //        mineManager.CreateMines(1, 1000, new Vector2Int(mapDimensions.x, mapDimensions.y));
-    //        mineManager.mines[0].CallExist();
-    //    }
-    //    InstantiateTiles();
-
-    //}
+    [SerializeField]private GameObject tilePrefab; 
 
     private void OnDrawGizmos()
     {
@@ -27,7 +13,7 @@ public class GraphView : MonoBehaviour
             return;
         foreach (Node<Vector2Int> node in graph.nodes)
         {
-            // if there's a mine on this node, paint it yellow
+            //Si hay una mina, pinta el Gizmo amarillo
             if (mineManager != null && mineManager.GetMineAt(node.GetCoordinate()) != null)
             {
                 Gizmos.color = Color.yellow;
@@ -47,6 +33,7 @@ public class GraphView : MonoBehaviour
             Vector2Int coord = node.GetCoordinate();
             GameObject tile = Instantiate(tilePrefab, new Vector3(coord.x, coord.y, 1), Quaternion.identity, this.transform);
           
+
             var sr = tilePrefab.GetComponent<SpriteRenderer>();
             if (node.IsBlocked())
                 sr.color = Color.red;
@@ -55,6 +42,24 @@ public class GraphView : MonoBehaviour
             else
                 sr.color = Color.green;
         }
+    }
+
+    public void ColorWithTerrain() {
+        foreach (var node in graph.nodes)
+        {
+            Vector2Int coord = node.GetCoordinate();            
+
+            var sr = tilePrefab.GetComponent<SpriteRenderer>();
+            if (node.IsBlocked())
+                sr.color = Color.red;
+            else if (mineManager.GetMineAt(coord) != null)
+                sr.color = Color.yellow;
+            else
+                sr.color = Color.green;
+        }
+    }
+    public void ColorWithVoronoi() { 
+        
     }
 
 
