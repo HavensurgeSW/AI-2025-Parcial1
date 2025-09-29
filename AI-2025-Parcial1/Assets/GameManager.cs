@@ -29,7 +29,7 @@ public class GameManager : MonoBehaviour
         if (!int.TryParse(mapY.text, out y))
             y = 10;
         if (!int.TryParse(mineAmount.text, out mines))
-            mines = 5;      
+            mines = 4;      
 
 
         mapDimensions = new Vector2Int(x, y);   
@@ -42,6 +42,8 @@ public class GameManager : MonoBehaviour
         GV.SetSpacing(tileSpacingSlider.value);
         GV.AssignMineManager(MM);
         GV.AssignTile(tilePrefab);
+        GV.wrapWorld = true;
+        GV.mapSize = mapDimensions;
         GV.InstantiateTiles();
         GV.ColorWithTerrain();
         GV.ColorWithVoronoi();
@@ -54,10 +56,6 @@ public class GameManager : MonoBehaviour
             SpawnBisectorBetweenMines(0, 3);
             SpawnBisectorBetweenMines(1, 3);
             SpawnBisectorBetweenMines(2, 3);
-            SpawnBisectorBetweenMines(3, 4);
-            SpawnBisectorBetweenMines(4, 0);
-            SpawnBisectorBetweenMines(4, 1);
-            SpawnBisectorBetweenMines(4, 2);
         }
 
         Instantiate(miner, new Vector3(0, 0, 0), Quaternion.identity);

@@ -1,5 +1,6 @@
+using System;
 using System.Collections.Generic;
-        using UnityEngine;
+using UnityEngine;
 
 public class GraphView : MonoBehaviour
 {
@@ -11,6 +12,8 @@ public class GraphView : MonoBehaviour
 
     // Map from node coordinate -> closest mine coordinate (set by ColorWithVoronoi)
     public Dictionary<Vector2Int, Vector2Int> nearestMineLookup = new Dictionary<Vector2Int, Vector2Int>();
+    public bool wrapWorld = false;
+    public Vector2Int mapSize = new Vector2Int(0, 0);
 
     public float TileSpacing { get { return tileSpacing; } }
 
@@ -75,10 +78,28 @@ public class GraphView : MonoBehaviour
         }
     }
 
+    // Helper: squared distance between two integer coords. If wrapWorld is true and mapSize > 0,
+    // compute toroidal shortest distance.
+    private int SquaredDistance(Vector2Int a, Vector2Int b)
+    {
+        if (!wrapWorld || mapSize.x <= 0 || mapSize.y <= 0)
+        {
+            int xx = a.x - b.x;
+            int xy = a.y - b.y;
+            return xx * xx + xy * xy;
+        }
+
+        int dx = Math.Abs(a.x - b.x);
+        int dy = Math.Abs(a.y - b.y);
+
+        if (mapSize.x > 0) dx = Math.Min(dx, mapSize.x - dx);
+        if (mapSize.y > 0) dy = Math.Min(dy, mapSize.y - dy);
+
+        return dx * dx + dy * dy;
+    }
+
     // Assigns nearest mine coordinate for each node and colors tiles by mine.
-    // Uses the bisector logic implicitly: if exactly two mines exist, we
-    // compare distance to the two mines (equivalent to splitting by their perpendicular bisector).
-    // For more than two mines, each node is assigned to its nearest mine (Euclidean).
+    // Uses toroidal distances when wrapWorld is enabled.
     public void ColorWithVoronoi()
     {
         nearestMineLookup.Clear();
@@ -91,7 +112,8 @@ public class GraphView : MonoBehaviour
         {
             if (m == null) continue;
             int key = (m.Position.x * 73856093) ^ (m.Position.y * 19349663);
-            float hue = (Mathf.Abs(key) % 360) / 360f;
+            int nonNeg = key & 0x7FFFFFFF;
+            float hue = (nonNeg % 360) / 360f;
             mineColors[m.Position] = Color.HSVToRGB(hue, 0.6f, 0.95f);
         }
 
@@ -122,24 +144,19 @@ public class GraphView : MonoBehaviour
                 var a = mineManager.mines[0].Position;
                 var b = mineManager.mines[1].Position;
 
-                // squared distances
-                int dax = coord.x - a.x; int day = coord.y - a.y;
-                int dbx = coord.x - b.x; int dby = coord.y - b.y;
-                int da2 = dax * dax + day * day;
-                int db2 = dbx * dbx + dby * dby;
+                int da2 = SquaredDistance(coord, a);
+                int db2 = SquaredDistance(coord, b);
 
                 chosenMinePos = da2 <= db2 ? a : b;
             }
             else
             {
-                // more than two mines: find nearest by Euclidean squared distance
+                // more than two mines: find nearest by squared distance (supports wrap)
                 int bestDist = int.MaxValue;
                 foreach (var m in mineManager.mines)
                 {
                     if (m == null) continue;
-                    int dx = coord.x - m.Position.x;
-                    int dy = coord.y - m.Position.y;
-                    int d2 = dx * dx + dy * dy;
+                    int d2 = SquaredDistance(coord, m.Position);
                     if (d2 < bestDist)
                     {
                         bestDist = d2;
