@@ -10,7 +10,7 @@ public class GraphView : MonoBehaviour
     [SerializeField] private GameObject tilePrefab;
     float tileSpacing = 1.0f;
 
-    // Map from node coordinate -> closest mine coordinate (set by ColorWithVoronoi)
+    // Map from node coordinate -> closest mine coordinate (set by Voronoi)
     public Dictionary<Vector2Int, Vector2Int> nearestMineLookup = new Dictionary<Vector2Int, Vector2Int>();
     public bool wrapWorld = false;
     public Vector2Int mapSize = new Vector2Int(0, 0);
@@ -78,113 +78,16 @@ public class GraphView : MonoBehaviour
         }
     }
 
-    // Helper: squared distance between two integer coords. If wrapWorld is true and mapSize > 0,
-    // compute toroidal shortest distance.
-    private int SquaredDistance(Vector2Int a, Vector2Int b)
-    {
-        if (!wrapWorld || mapSize.x <= 0 || mapSize.y <= 0)
-        {
-            int xx = a.x - b.x;
-            int xy = a.y - b.y;
-            return xx * xx + xy * xy;
-        }
-
-        int dx = Math.Abs(a.x - b.x);
-        int dy = Math.Abs(a.y - b.y);
-
-        if (mapSize.x > 0) dx = Math.Min(dx, mapSize.x - dx);
-        if (mapSize.y > 0) dy = Math.Min(dy, mapSize.y - dy);
-
-        return dx * dx + dy * dy;
-    }
-
-    // Assigns nearest mine coordinate for each node and colors tiles by mine.
-    // Uses toroidal distances when wrapWorld is enabled.
+    // Delegate Voronoi work to the new Voronoi class.
     public void ColorWithVoronoi()
     {
+        var vor = new Voronoi(mineManager, wrapWorld, mapSize);
+        vor.ComputeAndColor(graph, this.transform);
+
+        // copy mapping so other systems that reference GraphView.nearestMineLookup still work
         nearestMineLookup.Clear();
-        if (mineManager == null || mineManager.mines == null || mineManager.mines.Count == 0)
-            return;
-
-        // build deterministic color per mine
-        var mineColors = new Dictionary<Vector2Int, Color>();
-        foreach (var m in mineManager.mines)
-        {
-            if (m == null) continue;
-            int key = (m.Position.x * 73856093) ^ (m.Position.y * 19349663);
-            int nonNeg = key & 0x7FFFFFFF;
-            float hue = (nonNeg % 360) / 360f;
-            mineColors[m.Position] = Color.HSVToRGB(hue, 0.6f, 0.95f);
-        }
-
-        int mineCount = mineManager.mines.Count;
-        for (int i = 0; i < graph.nodes.Count; i++)
-        {
-            var node = graph.nodes[i];
-            Vector2Int coord = node.GetCoordinate();
-
-            // skip blocked nodes from being assigned a mine (optional)
-            if (node.IsBlocked())
-            {
-                // color blocked tile red
-                var blockedChild = transform.Find($"Tile_{coord.x}_{coord.y}");
-                if (blockedChild != null)
-                    blockedChild.GetComponent<SpriteRenderer>().color = Color.red;
-                continue;
-            }
-
-            // If exactly two mines, use direct comparison between the two (bisector)
-            Vector2Int chosenMinePos = default;
-            if (mineCount == 1)
-            {
-                chosenMinePos = mineManager.mines[0].Position;
-            }
-            else if (mineCount == 2)
-            {
-                var a = mineManager.mines[0].Position;
-                var b = mineManager.mines[1].Position;
-
-                int da2 = SquaredDistance(coord, a);
-                int db2 = SquaredDistance(coord, b);
-
-                chosenMinePos = da2 <= db2 ? a : b;
-            }
-            else
-            {
-                // more than two mines: find nearest by squared distance (supports wrap)
-                int bestDist = int.MaxValue;
-                foreach (var m in mineManager.mines)
-                {
-                    if (m == null) continue;
-                    int d2 = SquaredDistance(coord, m.Position);
-                    if (d2 < bestDist)
-                    {
-                        bestDist = d2;
-                        chosenMinePos = m.Position;
-                    }
-                }
-            }
-
-            // store mapping
-            nearestMineLookup[coord] = chosenMinePos;
-
-            // color the tile: mines themselves remain yellow
-            var child = transform.Find($"Tile_{coord.x}_{coord.y}");
-            if (child == null) continue;
-            var sr = child.GetComponent<SpriteRenderer>();
-            if (mineManager.GetMineAt(coord) != null)
-            {
-                sr.color = Color.yellow;
-            }
-            else
-            {
-                // use mine color
-                if (mineColors.TryGetValue(chosenMinePos, out Color c))
-                    sr.color = c;
-                else
-                    sr.color = Color.green;
-            }
-        }
+        foreach (var kv in vor.nearestMineLookup)
+            nearestMineLookup[kv.Key] = kv.Value;
     }
 
 

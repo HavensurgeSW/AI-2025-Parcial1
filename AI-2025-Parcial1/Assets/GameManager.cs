@@ -49,13 +49,13 @@ public class GameManager : MonoBehaviour
         GV.ColorWithVoronoi();
 
         if (MM != null && MM.mines != null && MM.mines.Count >= 2)
-        {
-            SpawnBisectorBetweenMines(0, 1);
-            SpawnBisectorBetweenMines(1, 2);
-            SpawnBisectorBetweenMines(0, 2);
-            SpawnBisectorBetweenMines(0, 3);
-            SpawnBisectorBetweenMines(1, 3);
-            SpawnBisectorBetweenMines(2, 3);
+        { 
+            //Voronoi.SpawnBisectorBetweenMines(transform, MM, 0, 1, GV.TileSpacing, mapDimensions);
+            //Voronoi.SpawnBisectorBetweenMines(transform, MM, 1, 2, GV.TileSpacing, mapDimensions);
+            //Voronoi.SpawnBisectorBetweenMines(transform, MM, 0, 2, GV.TileSpacing, mapDimensions);
+            //Voronoi.SpawnBisectorBetweenMines(transform, MM, 0, 3, GV.TileSpacing, mapDimensions);
+            //Voronoi.SpawnBisectorBetweenMines(transform, MM, 1, 3, GV.TileSpacing, mapDimensions);
+            //Voronoi.SpawnBisectorBetweenMines(transform, MM, 2, 3, GV.TileSpacing, mapDimensions);
         }
 
         Instantiate(miner, new Vector3(0, 0, 0), Quaternion.identity);
@@ -75,55 +75,5 @@ public class GameManager : MonoBehaviour
         float sizeX = mapDimensions.x / (2f * aspect);
         float sizeY = mapDimensions.y / 2f;
         cam.orthographicSize = Mathf.Max(sizeX, sizeY) + 1f;
-    }
-
-    public void SpawnBisectorBetweenMines(int indexA, int indexB, float thickness = 0.10f)
-    {
-        if (MM == null || MM.mines == null) return;
-        if (indexA < 0 || indexA >= MM.mines.Count || indexB < 0 || indexB >= MM.mines.Count) return;
-
-        var mineA = MM.mines[indexA];
-        var mineB = MM.mines[indexB];
-        if (mineA == null || mineB == null) return;
-
-        float spacing = 1.0f;
-        if (GV != null) spacing = GV.TileSpacing;
-
-        Vector3 worldA = new Vector3(mineA.Position.x * spacing, mineA.Position.y * spacing, 0f);
-        Vector3 worldB = new Vector3(mineB.Position.x * spacing, mineB.Position.y * spacing, 0f);
-
-        Vector3 mid = (worldA + worldB) * 0.5f;
-        Vector3 dir = worldB - worldA;
-        float dist = dir.magnitude;
-        if (dist <= Mathf.Epsilon)
-        {
-            Debug.LogWarning("SpawnBisectorBetweenMines: mines are at the same position");
-            return;
-        }
-
-        // Bisector direction is perpendicular to dir
-        // Angle for the bisector (in degrees)
-        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + 90f;
-
-        // Compute length so the bisector spans the map bounds (safe margin)
-        float mapMaxDim = Mathf.Max(mapDimensions.x * spacing, mapDimensions.y * spacing);
-        float length = mapMaxDim * 2.5f; // multiplier ensures full coverage even when rotated
-        // Optionally ensure length is at least slightly larger than the distance between mines
-        length = Mathf.Max(length, dist * 1.2f);
-
-        GameObject bisector = new GameObject($"Bisector_{indexA}_{indexB}");
-        bisector.transform.SetParent(transform, true);
-
-        var sr = bisector.AddComponent<SpriteRenderer>();
-        sr.sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
-        sr.color = new Color(0.1f, 0.9f, 0.9f, 0.8f);
-        sr.sortingOrder = 200; // above tiles and markers
-
-        // Position, rotation and scale
-        bisector.transform.position = new Vector3(mid.x, mid.y, 0f);
-        bisector.transform.rotation = Quaternion.Euler(0f, 0f, angle);
-
-        float worldThickness = thickness * spacing;
-        bisector.transform.localScale = new Vector3(length, worldThickness, 1f);
     }
 }
