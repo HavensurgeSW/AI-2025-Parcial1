@@ -25,16 +25,36 @@ public class MinerMovingState : State
 
     public override BehaviourActions GetOnEnterBehaviours(params object[] parameters)
     {
-      
-        startNode = parameters[0] as Node<Vector2Int>;   
+        startNode = parameters[0] as Node<Vector2Int>;
         destination = parameters[1] as Node<Vector2Int>;
         GV = parameters[2] as GraphView;
-        
-        GoldMine nearestMine = new GoldMine();
-        nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
-        destination.SetCoordinate(new Vector2Int(nearestMine.Position.x, nearestMine.Position.y));      
 
-        path = traveler.FindPath(startNode, destination , GV);
+        // Try to resolve the actual node from the graph (same coordinate, real instance)
+        Node<Vector2Int> graphNode = null;
+        if (GV != null && GV.graph != null && GV.graph.nodes != null)
+        {
+            graphNode = GV.graph.nodes.Find(n => n.GetCoordinate().Equals(startNode.GetCoordinate()));
+        }
+
+        if (graphNode != null)
+        {           
+            if (traveler.TryGetNearestMine(graphNode, out Vector2Int mineCoord))
+            {
+                destination.SetCoordinate(mineCoord);
+            }            
+        }
+        else
+        {
+            // If we couldn't find the graph node instance, try the simple fallback path
+            if (GV != null && GV.mineManager != null)
+            {
+                var nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
+                if (nearestMine != null)
+                    destination.SetCoordinate(nearestMine.Position);
+            }
+        }
+
+        path = traveler.FindPath(startNode, destination, GV);
         currentPathIndex = 0;
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMainThreadableBehaviour(0, () =>

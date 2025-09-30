@@ -42,6 +42,9 @@ public class Voronoi
         nearestMineLookup.Clear();
         mineColors.Clear();
 
+        if (mineManager == null || mineManager.mines == null || mineManager.mines.Count == 0)
+            return;
+
         foreach (var m in mineManager.mines)
         {
             if (m == null) continue;
@@ -58,7 +61,9 @@ public class Voronoi
             Vector2Int coord = node.GetCoordinate();
 
             if (node.IsBlocked())
-            {
+            {               
+                node.ClearNearestMine();
+
                 var blockedChild = parent.Find($"Tile_{coord.x}_{coord.y}");
                 if (blockedChild != null)
                     blockedChild.GetComponent<SpriteRenderer>().color = Color.red;
@@ -95,7 +100,9 @@ public class Voronoi
                 }
             }
 
+            // store mapping and update the node attribute
             nearestMineLookup[coord] = chosenMinePos;
+            node.SetNearestMine(chosenMinePos);
 
             // color the tile: mines themselves remain yellow
             var child = parent.Find($"Tile_{coord.x}_{coord.y}");

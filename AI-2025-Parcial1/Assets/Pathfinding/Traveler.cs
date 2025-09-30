@@ -12,31 +12,43 @@ public class Traveler
     {
         pathfinder = new AStarPathfinder<Node<Vector2Int>>();
         startNode = new Node<Vector2Int>();
-        destinationNode = new Node<Vector2Int>();
-        {
-            //startNode = new Node<Vector2Int>();
-            //startNode.SetCoordinate(new Vector2Int(0,0));        
-            //destinationNode = new Node<Vector2Int>();
-            //GoldMine nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
-            //destinationNode.SetCoordinate(new Vector2Int(nearestMine.Position.x, nearestMine.Position.y));
-            //List<Node<Vector2Int>> path = pathfinder.FindPath(startNode, destinationNode, GV.graph.nodes);
-
-            //StartCoroutine(Move(path));
-        }
+        destinationNode = new Node<Vector2Int>();        
     }
 
     public List<Node<Vector2Int>> FindPath(Node<Vector2Int> start, Node<Vector2Int> destination, GraphView gv) {
         return pathfinder.FindPath(start, destination, gv.graph.nodes);
     }
-
-    public IEnumerator Move(List<Node<Vector2Int>> path) 
+    public bool TryGetNearestMine(Node<Vector2Int> node, out Vector2Int mineCoordinate)
     {
-        //LEGACY, Ya no se usa.
-        foreach (Node<Vector2Int> node in path)
+        mineCoordinate = new Vector2Int();
+        if (node == null) return false;
+        if (node.HasNearestMine())
         {
-            //transform.position = new Vector3(node.GetCoordinate().x, node.GetCoordinate().y);
-            Debug.Log("Moved to: "+ node.GetCoordinate().x+" "+ node.GetCoordinate().y);
-            yield return new WaitForSeconds(1.0f);
+            mineCoordinate = node.GetNearestMine();
+            return true;
         }
+        return false;
+    }
+
+    public bool TryGetNearestMine(GraphView gv, Vector2Int coord, out Vector2Int mineCoordinate)
+    {
+        mineCoordinate = default;
+        if (gv == null) return false;
+
+        // Prefer the GraphView/Voronoi precomputed map (O(1))
+        if (gv.nearestMineLookup != null && gv.nearestMineLookup.TryGetValue(coord, out Vector2Int lookup))
+        {
+            mineCoordinate = lookup;
+            return true;
+        }
+
+        // Fallback to GraphView helper which may query mine manager (linear in mines)
+        if (gv.TryGetNearestMineAt(coord, out Vector2Int fromGV))
+        {
+            mineCoordinate = fromGV;
+            return true;
+        }
+
+        return false;
     }
 }

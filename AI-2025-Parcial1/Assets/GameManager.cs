@@ -25,11 +25,11 @@ public class GameManager : MonoBehaviour
     {
         int x, y, mines;
         if (!int.TryParse(mapX.text, out x))
-            x = 10;
+            x = 20;
         if (!int.TryParse(mapY.text, out y))
-            y = 10;
+            y = 20;
         if (!int.TryParse(mineAmount.text, out mines))
-            mines = 4;      
+            mines = 3;      
 
 
         mapDimensions = new Vector2Int(x, y);   

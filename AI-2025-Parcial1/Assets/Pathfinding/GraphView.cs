@@ -108,4 +108,32 @@ public class GraphView : MonoBehaviour
     {
         tileSpacing = s;
     }
+
+    public Node<Vector2Int> GetNodeAt(Vector2Int coord)
+    {
+        if (graph == null || graph.nodes == null) return null;
+        return graph.nodes.Find(n => n.GetCoordinate().Equals(coord));
+    }
+
+    public bool TryGetNearestMineAt(Vector2Int coord, out Vector2Int mineCoordinate)
+    {
+        mineCoordinate = default;
+        if (nearestMineLookup != null && nearestMineLookup.TryGetValue(coord, out Vector2Int lookup))
+        {
+            mineCoordinate = lookup;
+            return true;
+        }
+
+        if (mineManager != null)
+        {
+            var m = mineManager.FindNearest(coord);
+            if (m != null)
+            {
+                mineCoordinate = m.Position;
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
