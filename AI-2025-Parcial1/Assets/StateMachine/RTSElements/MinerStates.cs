@@ -262,26 +262,32 @@ public class MinerDepositingState : State
 
 public class MinerMiningState : State
 {
+
+
     public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
     {        
         GoldMine goldMine = parameters[0] as GoldMine;        
         int miningRate = (int)parameters[1];        
         InventoryData inv = parameters[2] as InventoryData;
+        Miner miner = parameters[3] as Miner;  
 
-        int hunger = 0;
 
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMultiThreadableBehaviour(0, () =>
         {           
-            if (hunger >= 3)
-            {
-                if (goldMine.RetrieveFood(1) > 0)
-                    hunger = 0;
+            if (inv.hunger >= 3)
+            {               
+                if (goldMine != null && goldMine.RetrieveFood(1) > 0) { 
+                    inv.hunger = 0;
+                
+                }
             }
             else { 
-                int minedAmount = goldMine.Mine(miningRate);
+                int minedAmount = 0;
+                if (goldMine != null)
+                    minedAmount = goldMine.Mine(miningRate);
                 inv.inventory+= minedAmount;
-                hunger++;        
+                inv.hunger++;                
             }
         });
 
@@ -291,11 +297,13 @@ public class MinerMiningState : State
             {
                 OnFlag?.Invoke(Miner.Flags.OnInventoryFull);
             }
-            else if (goldMine.isDepleted)
-            {
-
-                // OnFlag?.Invoke(MinerFlags.OnMineDepleted);
-                OnFlag?.Invoke(Miner.Flags.OnInventoryFull);
+            else if (goldMine == null || goldMine.isDepleted)
+            {               
+                if (miner != null)
+                {
+                    miner.SetTargetToClosestMine();
+                }
+                OnFlag?.Invoke(Miner.Flags.OnMineDepleted);
             }
         });
 
@@ -318,7 +326,7 @@ public class MinerIdle : State {
 
         behaviourActions.SetTransitionBehaviour(() =>
         {            
-            OnFlag?.Invoke(Miner.Flags.OnFuckYou);            
+            OnFlag?.Invoke(Miner.Flags.OnSpawned);            
         });
 
         return behaviourActions;

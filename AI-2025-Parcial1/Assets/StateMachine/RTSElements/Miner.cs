@@ -30,7 +30,8 @@ class Miner : MonoBehaviour
         OnInventoryFull,
         OnTargetReach,
         OnReachedTown,
-        OnFuckYou
+        OnSpawned,
+        OnMineDepleted
     }
 
 
@@ -46,12 +47,13 @@ class Miner : MonoBehaviour
         minerFsm.AddState<MinerIdle>(State.Idle);
         minerFsm.AddState<MinerMovingState>(State.MoveToTarget, onTickParameters: () => new object[] {this.transform, Time.deltaTime}, onEnterParameters:()=>new object[] {graphPos, targetPos, GV});
         minerFsm.AddState<MinerMoveToTown>(State.MoveToTown, onTickParameters: () => new object[] {this.transform, Time.deltaTime}, onEnterParameters:()=>new object[] {graphPos, home, GV});
-        minerFsm.AddState<MinerMiningState>(State.Mining, onTickParameters: () => new object[] { GV.mineManager.GetMineAt(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y)), miningRate, inventoryData});
+        minerFsm.AddState<MinerMiningState>(State.Mining, onTickParameters: () => new object[] { GV.mineManager.GetMineAt(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y)), miningRate, inventoryData, this});
         minerFsm.AddState<MinerDepositingState>(State.Depositing, onTickParameters: () => new object[] { townhall, inventoryData}, null, onExitParameters: () => new object[] { this });
 
-        minerFsm.SetTransition(State.Idle, Flags.OnFuckYou, State.MoveToTarget);
+        minerFsm.SetTransition(State.Idle, Flags.OnSpawned, State.MoveToTarget);
         minerFsm.SetTransition(State.MoveToTarget, Flags.OnTargetReach, State.Mining);
         minerFsm.SetTransition(State.Mining, Flags.OnInventoryFull, State.MoveToTown);
+        minerFsm.SetTransition(State.Mining, Flags.OnMineDepleted, State.MoveToTarget);
         minerFsm.SetTransition(State.MoveToTown, Flags.OnTargetReach, State.Depositing);
         minerFsm.SetTransition(State.Depositing, Flags.OnInventoryEmpty, State.MoveToTarget);
     }
@@ -68,10 +70,10 @@ class Miner : MonoBehaviour
 class InventoryData {
     public int inventory;
     public int maxInventory;
-    public int food;
+    public int hunger;
     public InventoryData() {
         inventory = 0;
         maxInventory = 15;
-        food = 10;
+        hunger = 0;
     }
 }

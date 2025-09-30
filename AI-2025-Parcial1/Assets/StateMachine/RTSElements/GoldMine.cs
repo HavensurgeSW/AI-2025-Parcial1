@@ -13,14 +13,14 @@ public class GoldMine
     public GoldMine() { 
         maxGold = 10;
         currentGold = maxGold;
-        foodStored = 1000;
+        foodStored = 2;
     }
     public GoldMine(int maxGold, Vector2Int position)
     {
         this.maxGold = maxGold;
         this.currentGold = maxGold;
         this.Position = position;
-        this.foodStored = 1000;
+        this.foodStored = 2;
     }
     public int Mine(int amount)
     {
@@ -29,11 +29,11 @@ public class GoldMine
         
         if (currentGold <= 0)
         {          
-            Debug.Log($"Mine at {Position} is depleted.");
+            //Debug.Log($"Mine at {Position} is depleted.");
             OnDepleted?.Invoke(this);
         }
 
-        Debug.Log($"Mined {mined} gold from mine at {Position}. Remaining gold: {currentGold}");
+        //Debug.Log($"Mined {mined} gold from mine at {Position}. Remaining gold: {currentGold}");
 
         return mined;
     }
@@ -41,6 +41,7 @@ public class GoldMine
     {
         int retrieved = Mathf.Min(amount, foodStored);
         foodStored -= retrieved;
+        Debug.Log("Food remaining: " + foodStored);
         return retrieved;
     }
     public void CallExist()

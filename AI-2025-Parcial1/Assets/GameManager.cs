@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Data;
 
 public class GameManager : MonoBehaviour
 {
@@ -29,9 +30,9 @@ public class GameManager : MonoBehaviour
     {
         int x, y, mines;
         if (!int.TryParse(mapX.text, out x))
-            x = 20;
+            x = 10;
         if (!int.TryParse(mapY.text, out y))
-            y = 20;
+            y = 10;
         if (!int.TryParse(mineAmount.text, out mines))
             mines = 3;      
 
@@ -41,7 +42,7 @@ public class GameManager : MonoBehaviour
         graph = new Vector2IntGraph<Node<Vector2Int>>(mapDimensions.x, mapDimensions.y);
         TH = new Townhall(new Vector2Int(0, 0));
         MM = new GoldMineManager();
-        MM.CreateMines(mines, 30, new Vector2Int(mapDimensions.x, mapDimensions.y));
+        MM.CreateMines(mines, 50, new Vector2Int(mapDimensions.x, mapDimensions.y));
 
         if (MM != null)
             MM.MineDepleted += OnMineDepleted;
@@ -66,9 +67,6 @@ public class GameManager : MonoBehaviour
             //Voronoi.SpawnBisectorBetweenMines(transform, MM, 2, 3, GV.TileSpacing, mapDimensions);
         }
 
-        //Instantiate(miner, new Vector3(0, 0, 0), Quaternion.identity);
-        //miner.GetComponent<Miner>().GV = GV;
-        //miner.GetComponent<Miner>().townhall = TH;
         AdjustCameraToGrid();
     }
 
@@ -110,5 +108,11 @@ public class GameManager : MonoBehaviour
         Instantiate(miner, new Vector3(0, 0, 0), Quaternion.identity);
         miner.GetComponent<Miner>().GV = GV;
         miner.GetComponent<Miner>().townhall = TH;
+    }
+
+    public void SupplyFoodToMines() { 
+        foreach (GoldMine mine in MM.Mines) {
+            mine.foodStored = 10;
+        }
     }
 }
