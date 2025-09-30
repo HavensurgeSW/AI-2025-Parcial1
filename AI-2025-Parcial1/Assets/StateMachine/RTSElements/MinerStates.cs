@@ -113,8 +113,6 @@ public class MinerMovingState : State
                 {
                     startNode.SetCoordinate(path[path.Count - 1].GetCoordinate());
                 }
-
-                Debug.Log("Reached Mine");
                 OnFlag?.Invoke(Miner.Flags.OnTargetReach);
             }
         });
@@ -140,8 +138,6 @@ public class MinerMoveToTown : State
 
     public override BehaviourActions GetOnEnterBehaviours(params object[] parameters)
     {
-        Debug.Log("Heading home!");
-
         startNode = parameters[0] as Node<Vector2Int>;
         destination = parameters[1] as Node<Vector2Int>;
         GV = parameters[2] as GraphView;
@@ -206,7 +202,6 @@ public class MinerMoveToTown : State
                     startNode.SetCoordinate(path[path.Count - 1].GetCoordinate());
                 }
 
-                Debug.Log("Reached Home");
                 OnFlag?.Invoke(Miner.Flags.OnTargetReach);
             }
         });
@@ -220,7 +215,7 @@ public class MinerMoveToTown : State
 public class MinerDepositingState : State
 {
     public override BehaviourActions GetOnEnterBehaviours(params object[] parameters) {
-        Debug.Log("Depositing gold...");
+        
 
         BehaviourActions behaviourActions = new BehaviourActions();
         return behaviourActions;
@@ -277,8 +272,7 @@ public class MinerMiningState : State
 
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMultiThreadableBehaviour(0, () =>
-        {
-            Debug.Log("Mining...");
+        {           
             if (hunger >= 3)
             {
                 if (goldMine.RetrieveFood(1) > 0)
@@ -293,7 +287,6 @@ public class MinerMiningState : State
 
         behaviourActions.SetTransitionBehaviour(() =>
         {
-            Debug.Log("Gold in inventory: " + inv.inventory);
             if (inv.inventory >= inv.maxInventory)
             {
                 OnFlag?.Invoke(Miner.Flags.OnInventoryFull);

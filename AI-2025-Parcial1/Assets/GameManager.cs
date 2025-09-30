@@ -1,6 +1,7 @@
+using System;
 using UnityEngine;
-using TMPro;
 using UnityEngine.UI;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -21,6 +22,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] TMP_InputField mineAmount;
     [SerializeField] Slider tileSpacingSlider;
 
+    // Flag set from MineDepleted event handler (may be raised from background thread).
+    private volatile bool voronoiNeedsUpdate = false;
+
     private void Awake()
     {
         int x, y, mines;
@@ -37,7 +41,11 @@ public class GameManager : MonoBehaviour
         graph = new Vector2IntGraph<Node<Vector2Int>>(mapDimensions.x, mapDimensions.y);
         TH = new Townhall(new Vector2Int(0, 0));
         MM = new GoldMineManager();
-        MM.CreateMines(mines, 1000, new Vector2Int(mapDimensions.x, mapDimensions.y));
+        MM.CreateMines(mines, 60, new Vector2Int(mapDimensions.x, mapDimensions.y));
+
+        if (MM != null)
+            MM.MineDepleted += OnMineDepleted;
+
         GV.graph = graph;
         GV.SetSpacing(tileSpacingSlider.value);
         GV.AssignMineManager(MM);
@@ -62,6 +70,27 @@ public class GameManager : MonoBehaviour
         miner.GetComponent<Miner>().GV = GV;
         miner.GetComponent<Miner>().townhall = TH;
         AdjustCameraToGrid();
+    }
+
+    private void Update()
+    {
+        if (voronoiNeedsUpdate)
+        {
+            voronoiNeedsUpdate = false;
+            if (GV != null)
+                GV.ColorWithVoronoi();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (MM != null)
+            MM.MineDepleted -= OnMineDepleted;
+    }
+
+    private void OnMineDepleted(GoldMine mine)
+    {
+        voronoiNeedsUpdate = true;
     }
 
     private void AdjustCameraToGrid()

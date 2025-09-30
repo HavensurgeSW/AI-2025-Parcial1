@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class Voronoi
@@ -45,7 +46,11 @@ public class Voronoi
         if (mineManager == null || mineManager.mines == null || mineManager.mines.Count == 0)
             return;
 
-        foreach (var m in mineManager.mines)
+        // only consider non-null, non-depleted mines
+        var activeMines = mineManager.mines.Where(m => m != null && !m.isDepleted).ToList();
+        if (activeMines.Count == 0) return;
+
+        foreach (var m in activeMines)
         {
             if (m == null) continue;
             int key = (m.Position.x * 73856093) ^ (m.Position.y * 19349663);
@@ -54,7 +59,7 @@ public class Voronoi
             mineColors[m.Position] = Color.HSVToRGB(hue, 0.6f, 0.95f);
         }
 
-        int mineCount = mineManager.mines.Count;
+        int mineCount = activeMines.Count;
         for (int i = 0; i < graph.nodes.Count; i++)
         {
             var node = graph.nodes[i];
@@ -73,12 +78,12 @@ public class Voronoi
             Vector2Int chosenMinePos = default;
             if (mineCount == 1)
             {
-                chosenMinePos = mineManager.mines[0].Position;
+                chosenMinePos = activeMines[0].Position;
             }
             else if (mineCount == 2)
             {
-                var a = mineManager.mines[0].Position;
-                var b = mineManager.mines[1].Position;
+                var a = activeMines[0].Position;
+                var b = activeMines[1].Position;
 
                 int da2 = SquaredDistance(coord, a);
                 int db2 = SquaredDistance(coord, b);
@@ -88,7 +93,7 @@ public class Voronoi
             else
             {
                 int bestDist = int.MaxValue;
-                foreach (var m in mineManager.mines)
+                foreach (var m in activeMines)
                 {
                     if (m == null) continue;
                     int d2 = SquaredDistance(coord, m.Position);
@@ -104,11 +109,12 @@ public class Voronoi
             nearestMineLookup[coord] = chosenMinePos;
             node.SetNearestMine(chosenMinePos);
 
-            // color the tile: mines themselves remain yellow
+            // color the tile: mines themselves remain yellow (only if not depleted)
             var child = parent.Find($"Tile_{coord.x}_{coord.y}");
             if (child == null) continue;
             var sr = child.GetComponent<SpriteRenderer>();
-            if (mineManager.GetMineAt(coord) != null)
+            var mineAt = mineManager.GetMineAt(coord);
+            if (mineAt != null && !mineAt.isDepleted)
             {
                 sr.color = Color.yellow;
             }

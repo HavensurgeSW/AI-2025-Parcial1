@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,6 +9,9 @@ public class GoldMineManager
 
     public IReadOnlyList<GoldMine> Mines => mines;
 
+
+    public event Action<GoldMine> MineDepleted;
+
     public void AddMine(GoldMine mine)
     {
         if (mine == null) return;
@@ -15,8 +19,13 @@ public class GoldMineManager
         {
             mines.Add(mine);
             byPosition[mine.Position] = mine;
-            Debug.Log("Created mine at " + mine.Position.x+ ", " + mine.Position.y);
+            mine.OnDepleted += HandleMineDepleted;
         }
+    }
+
+    private void HandleMineDepleted(GoldMine mine)
+    {
+        MineDepleted?.Invoke(mine);
     }
 
     public void CreateMines(int count, int maxGold, Vector2Int areaSize)
@@ -26,7 +35,7 @@ public class GoldMineManager
             Vector2Int pos;
             do
             {
-                pos = new Vector2Int(Random.Range(0, areaSize.x), Random.Range(0, areaSize.y));
+                pos = new Vector2Int(UnityEngine.Random.Range(0, areaSize.x), UnityEngine.Random.Range(0, areaSize.y));
             } while (byPosition.ContainsKey(pos)); // avoid duplicates
             var mine = new GoldMine(maxGold, pos);
             AddMine(mine);
@@ -37,6 +46,8 @@ public class GoldMineManager
     {
         if (byPosition.TryGetValue(pos, out var mine))
         {
+            // unsubscribe before removal
+            mine.OnDepleted -= HandleMineDepleted;
             byPosition.Remove(pos);
             mines.Remove(mine);
             return true;

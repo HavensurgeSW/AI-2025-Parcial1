@@ -43,7 +43,7 @@ class Agent : MonoBehaviour
 
         fsm.AddState<ExplodeState>(States.Explode);
 
-        fsm.SetTransition(States.Patrol, Flags.OnTargetNear, States.Chase, () => { Debug.Log("Te vi"); });
+        fsm.SetTransition(States.Patrol, Flags.OnTargetNear, States.Chase, () => {});
         fsm.SetTransition(States.Chase, Flags.OnTargetReach, States.Explode);
         fsm.SetTransition(States.Chase, Flags.OnTargetLost, States.Patrol);
     }

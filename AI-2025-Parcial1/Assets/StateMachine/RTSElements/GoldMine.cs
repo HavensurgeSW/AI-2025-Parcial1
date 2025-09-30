@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class GoldMine
@@ -7,11 +8,11 @@ public class GoldMine
     public int foodStored;
 
     public Vector2Int Position { get; }
+    public event Action<GoldMine> OnDepleted;
 
     public GoldMine() { 
-        maxGold = 1000;
+        maxGold = 10;
         currentGold = maxGold;
-        Debug.Log("GoldMine created with no position. DEFAULT CONSTRUCTOR");
         foodStored = 1000;
     }
     public GoldMine(int maxGold, Vector2Int position)
@@ -25,6 +26,15 @@ public class GoldMine
     {
         int mined = Mathf.Min(amount, currentGold);
         currentGold -= mined;
+        
+        if (currentGold <= 0)
+        {          
+            Debug.Log($"Mine at {Position} is depleted.");
+            OnDepleted?.Invoke(this);
+        }
+
+        Debug.Log($"Mined {mined} gold from mine at {Position}. Remaining gold: {currentGold}");
+
         return mined;
     }
     public int RetrieveFood(int amount)
