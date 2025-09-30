@@ -81,10 +81,9 @@ public class GraphView : MonoBehaviour
     // Delegate Voronoi work to the new Voronoi class.
     public void ColorWithVoronoi()
     {
-        var vor = new Voronoi(mineManager, wrapWorld, mapSize);
+        Voronoi vor = new Voronoi(mineManager, wrapWorld, mapSize);
         vor.ComputeAndColor(graph, this.transform);
 
-        // copy mapping so other systems that reference GraphView.nearestMineLookup still work
         nearestMineLookup.Clear();
         foreach (var kv in vor.nearestMineLookup)
             nearestMineLookup[kv.Key] = kv.Value;

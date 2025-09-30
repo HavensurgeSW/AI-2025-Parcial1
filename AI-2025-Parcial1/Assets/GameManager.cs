@@ -41,7 +41,7 @@ public class GameManager : MonoBehaviour
         graph = new Vector2IntGraph<Node<Vector2Int>>(mapDimensions.x, mapDimensions.y);
         TH = new Townhall(new Vector2Int(0, 0));
         MM = new GoldMineManager();
-        MM.CreateMines(mines, 60, new Vector2Int(mapDimensions.x, mapDimensions.y));
+        MM.CreateMines(mines, 30, new Vector2Int(mapDimensions.x, mapDimensions.y));
 
         if (MM != null)
             MM.MineDepleted += OnMineDepleted;
@@ -53,7 +53,7 @@ public class GameManager : MonoBehaviour
         GV.wrapWorld = true;
         GV.mapSize = mapDimensions;
         GV.InstantiateTiles();
-        GV.ColorWithTerrain();
+        //GV.ColorWithTerrain();
         GV.ColorWithVoronoi();
 
         if (MM != null && MM.mines != null && MM.mines.Count >= 2)
@@ -66,9 +66,9 @@ public class GameManager : MonoBehaviour
             //Voronoi.SpawnBisectorBetweenMines(transform, MM, 2, 3, GV.TileSpacing, mapDimensions);
         }
 
-        Instantiate(miner, new Vector3(0, 0, 0), Quaternion.identity);
-        miner.GetComponent<Miner>().GV = GV;
-        miner.GetComponent<Miner>().townhall = TH;
+        //Instantiate(miner, new Vector3(0, 0, 0), Quaternion.identity);
+        //miner.GetComponent<Miner>().GV = GV;
+        //miner.GetComponent<Miner>().townhall = TH;
         AdjustCameraToGrid();
     }
 
@@ -104,5 +104,11 @@ public class GameManager : MonoBehaviour
         float sizeX = mapDimensions.x / (2f * aspect);
         float sizeY = mapDimensions.y / 2f;
         cam.orthographicSize = Mathf.Max(sizeX, sizeY) + 1f;
+    }
+
+    public void SpawnMiner() {
+        Instantiate(miner, new Vector3(0, 0, 0), Quaternion.identity);
+        miner.GetComponent<Miner>().GV = GV;
+        miner.GetComponent<Miner>().townhall = TH;
     }
 }
