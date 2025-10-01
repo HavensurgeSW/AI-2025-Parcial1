@@ -5,6 +5,8 @@ public class Node<Coordinate> : INode, INode<Coordinate>
     private Coordinate coordinate;
     private Vector2Int nearestMine;
     private bool hasNearestMine = false;
+    private bool blocked = false;
+    private bool road = false;
 
     public void SetCoordinate(Coordinate coordinate)
     {
@@ -18,7 +20,10 @@ public class Node<Coordinate> : INode, INode<Coordinate>
 
     public bool IsBlocked()
     {
-        return false;
+        return blocked;
+    }
+    public bool IsRoad() { 
+        return road;
     }
     public void SetNearestMine(Vector2Int mineCoordinate)
     {

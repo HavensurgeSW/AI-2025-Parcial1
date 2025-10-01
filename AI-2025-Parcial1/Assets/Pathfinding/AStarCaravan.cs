@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : INode
+public class AStarCaravan<NodeType> : Pathfinder<NodeType> where NodeType : INode
 {
 
     private List<NodeType> graphNodes;
@@ -72,8 +72,11 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
     }
 
     protected override int MoveToNeighborCost(NodeType A, NodeType B)
-    {       
-        // On grid with Vector2Int coords each cardinal move costs 1.
+    {
+        // Caravan-specific costs: prefer roads (lower cost). Non-road moves are more expensive.
+        // On grid with Vector2Int coords each cardinal move has a base cost; here we
+        // return 1 for moves involving a road node, 2 for moves across non-road tiles.
+
         if (A is INode<Vector2Int> a && B is INode<Vector2Int> b)
         {
             Vector2Int ca = a.GetCoordinate();
@@ -87,17 +90,28 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
                 int dx = Mathf.Min(dxRaw, gridWidth - dxRaw);
                 int dy = Mathf.Min(dyRaw, gridHeight - dyRaw);
 
-                if (dx + dy == 1) return 1;
+                if (dx + dy == 1)
+                {
+                    bool aRoad = A.IsRoad();
+                    bool bRoad = B.IsRoad();
+                    return (aRoad || bRoad) ? 1 : 2;
+                }
             }
             else
             {
                 int dx = Mathf.Abs(ca.x - cb.x);
                 int dy = Mathf.Abs(ca.y - cb.y);
-                if (dx + dy == 1) return 1;
+                if (dx + dy == 1)
+                {
+                    bool aRoad = A.IsRoad();
+                    bool bRoad = B.IsRoad();
+                    return (aRoad || bRoad) ? 1 : 2;
+                }
             }
         }
 
-        return 1;
+        // fallback higher cost for non-adjacent or unknown cases
+        return 2;
     }
 
     protected override bool NodesEquals(NodeType A, NodeType B)

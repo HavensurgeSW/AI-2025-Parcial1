@@ -1,6 +1,7 @@
 ﻿public interface INode
 {
     public bool IsBlocked();
+    public bool IsRoad();
 }
 
 public interface INode<Coordinate> 

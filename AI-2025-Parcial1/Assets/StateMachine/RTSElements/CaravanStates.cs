@@ -1,13 +1,8 @@
-﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEditor.Rendering;
 using UnityEngine;
 
 
-public class MinerMovingState : State
+public class CaravanMovingState : State
 {
     //Pathfinding 
     private GraphView GV;
@@ -17,7 +12,7 @@ public class MinerMovingState : State
     List<Node<Vector2Int>> path = new List<Node<Vector2Int>>();
 
     //Game movement
-    private Transform minerTransform;
+    private Transform caravanTransform;
     private int currentPathIndex;
     // Snapping configuration
     private float snapInterval = 0.5f;
@@ -25,6 +20,7 @@ public class MinerMovingState : State
 
     public override BehaviourActions GetOnEnterBehaviours(params object[] parameters)
     {
+        Debug.Log("Entering CaravanMovingState");
         startNode = parameters[0] as Node<Vector2Int>;
         destination = parameters[1] as Node<Vector2Int>;
         GV = parameters[2] as GraphView;
@@ -37,11 +33,11 @@ public class MinerMovingState : State
         }
 
         if (graphNode != null)
-        {           
+        {
             if (traveler.TryGetNearestMine(graphNode, out Vector2Int mineCoord))
             {
                 destination.SetCoordinate(mineCoord);
-            }            
+            }
         }
         else
         {
@@ -59,7 +55,7 @@ public class MinerMovingState : State
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
-            
+
         });
         return behaviourActions;
     }
@@ -67,15 +63,13 @@ public class MinerMovingState : State
     public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
     {
         BehaviourActions behaviourActions = new BehaviourActions();
-        minerTransform = parameters[0] as Transform;
-        float deltaTime = (float)parameters[1];
-        //speed = (float)parameters[1];
-
+        caravanTransform = parameters[0] as Transform;
+        float deltaTime = (float)parameters[1];   
 
         behaviourActions.AddMainThreadableBehaviour(0, () =>
-        {            
+        {
             snapTimer += deltaTime;
-            
+
             if (snapTimer < snapInterval)
                 return;
 
@@ -83,9 +77,9 @@ public class MinerMovingState : State
             {
                 Node<Vector2Int> targetNode = path[currentPathIndex];
                 Vector2Int coord = targetNode.GetCoordinate();
-                Vector3 targetPos = new Vector3(coord.x * GV.TileSpacing, coord.y * GV.TileSpacing, minerTransform.position.z);
+                Vector3 targetPos = new Vector3(coord.x * GV.TileSpacing, coord.y * GV.TileSpacing, caravanTransform.position.z);
 
-                minerTransform.position = targetPos;
+                caravanTransform.position = targetPos;
 
                 if (startNode != null)
                 {
@@ -102,24 +96,52 @@ public class MinerMovingState : State
         {
             if (path == null || path.Count == 0)
             {
-                OnFlag?.Invoke(Miner.Flags.OnTargetReach);
+                OnFlag?.Invoke(Caravan.Flags.OnTargetReach);
                 return;
             }
 
             if (currentPathIndex >= path.Count)
             {
+                // Ensure final graphPos coordinate reflects the path's last node
+                //El ultimo nodo del path es el 
                 if (startNode != null && path.Count > 0)
                 {
                     startNode.SetCoordinate(path[path.Count - 1].GetCoordinate());
                 }
-                OnFlag?.Invoke(Miner.Flags.OnTargetReach);
+                OnFlag?.Invoke(Caravan.Flags.OnTargetReach);
             }
         });
         return behaviourActions;
     }
 }
 
-public class MinerMoveToTown : State
+public class CaravanDepositingState : State
+{
+    public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
+    {
+        GoldMine goldMine = parameters[0] as GoldMine;
+        int currentStorage = (int)parameters[1];
+
+        BehaviourActions behaviourActions = new BehaviourActions();
+
+
+        behaviourActions.AddMultiThreadableBehaviour(0, () =>
+        {
+            goldMine.foodStored += currentStorage;
+            Debug.Log($"Deposited {currentStorage} food to the Mine. Total food: {goldMine.foodStored}");
+        });
+
+        behaviourActions.SetTransitionBehaviour(() =>
+        {
+            OnFlag?.Invoke(Caravan.Flags.OnInventoryEmpty);
+            Debug.Log("Transitioning from Depositing to MoveToTown");
+        });
+
+        return behaviourActions;
+    }
+}
+
+public class CaravanMovingToTownState : State
 {
     //Pathfinding 
     private GraphView GV;
@@ -189,13 +211,12 @@ public class MinerMoveToTown : State
         {
             if (path == null || path.Count == 0)
             {
-                OnFlag?.Invoke(Miner.Flags.OnTargetReach);
+                OnFlag?.Invoke(Caravan.Flags.OnTargetReach);
                 return;
             }
 
             if (currentPathIndex >= path.Count)
             {
-                // Ensure final graphPos coordinate reflects the path's last node
                 if (startNode != null && path.Count > 0)
                 {
                     startNode.SetCoordinate(path[path.Count - 1].GetCoordinate());
@@ -208,122 +229,49 @@ public class MinerMoveToTown : State
         return behaviourActions;
 
     }
-
-
-}
-public class MinerDepositingState : State
-{
-    public override BehaviourActions GetOnEnterBehaviours(params object[] parameters) {
-        
-
-        BehaviourActions behaviourActions = new BehaviourActions();
-        return behaviourActions;
-    }
-
-    public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
-    {
-        Townhall townhall = parameters[0] as Townhall;
-        InventoryData inventory = parameters[1] as InventoryData;
-
-        BehaviourActions behaviourActions = new BehaviourActions();
-
-        behaviourActions.AddMainThreadableBehaviour(0, ()=>
-        {
-            if (inventory.inventory > 0)
-            {
-                townhall.Deposit(inventory.inventory);
-                inventory.inventory = 0;
-            }
-        });
-
-
-        behaviourActions.SetTransitionBehaviour(() =>
-        {
-            if (inventory.inventory == 0)
-            {
-                OnFlag?.Invoke(Miner.Flags.OnInventoryEmpty);
-            }
-        });
-
-        return behaviourActions;
-    }
-    public override BehaviourActions GetOnExitBehaviours(params object[] parameters)
-    {
-        Miner miner = parameters[0] as Miner;
-        BehaviourActions behaviourActions = new BehaviourActions();
-        behaviourActions.AddMainThreadableBehaviour(0, () =>
-        {
-            miner.SetTargetToClosestMine();
-        });
-        return behaviourActions;
-    }
 }
 
-public class MinerMiningState : State
+public class CaravanRestockingState : State
 {
     public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
-    {        
-        GoldMine goldMine = parameters[0] as GoldMine;        
-        int miningRate = (int)parameters[1];        
-        InventoryData inv = parameters[2] as InventoryData;
-        Miner miner = parameters[3] as Miner;  
-
+    {
+        int currentStorage = (int)parameters[0];
+        int storageSize = (int)parameters[1];
 
         BehaviourActions behaviourActions = new BehaviourActions();
+
+
         behaviourActions.AddMultiThreadableBehaviour(0, () =>
-        {           
-            if (inv.hunger >= 3)
-            {               
-                if (goldMine != null && goldMine.RetrieveFood(1) > 0) { 
-                    inv.hunger = 0;
-                
-                }
-            }
-            else { 
-                int minedAmount = 0;
-                if (goldMine != null)
-                    minedAmount = goldMine.Mine(miningRate);
-                inv.inventory+= minedAmount;
-                inv.hunger++;                
-            }
+        {
+            currentStorage = storageSize;
         });
 
         behaviourActions.SetTransitionBehaviour(() =>
         {
-            if (inv.inventory >= inv.maxInventory)
-            {
-                OnFlag?.Invoke(Miner.Flags.OnInventoryFull);
-            }
-            else if (goldMine == null || goldMine.isDepleted)
-            {               
-                if (miner != null)
-                {
-                    miner.SetTargetToClosestMine();
-                }
-                OnFlag?.Invoke(Miner.Flags.OnMineDepleted);
-            }
+            OnFlag?.Invoke(Caravan.Flags.OnInventoryFull);
         });
 
         return behaviourActions;
     }
 }
-public class MinerIdle : State {
+public class CaravanIdleState : State
+{
     public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
     {
-        
+
 
 
         BehaviourActions behaviourActions = new BehaviourActions();
 
 
         behaviourActions.AddMainThreadableBehaviour(0, () =>
-        {           
-             
+        {
+
         });
 
         behaviourActions.SetTransitionBehaviour(() =>
-        {            
-            OnFlag?.Invoke(Miner.Flags.OnSpawned);            
+        {
+            OnFlag?.Invoke(Caravan.Flags.OnSpawned);
         });
 
         return behaviourActions;

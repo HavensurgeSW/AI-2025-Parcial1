@@ -11,10 +11,11 @@ public class GameManager : MonoBehaviour
 
     public GoldMineManager MM;
     public Townhall TH;
-    
+
     [SerializeField] Vector2Int mapDimensions = new Vector2Int(10, 10);
 
     [SerializeField] GameObject miner;
+    [SerializeField] GameObject caravan;
     [SerializeField] GameObject tilePrefab;
 
     //UI Inputs
@@ -34,10 +35,10 @@ public class GameManager : MonoBehaviour
         if (!int.TryParse(mapY.text, out y))
             y = 10;
         if (!int.TryParse(mineAmount.text, out mines))
-            mines = 3;      
+            mines = 3;
 
 
-        mapDimensions = new Vector2Int(x, y);   
+        mapDimensions = new Vector2Int(x, y);
 
         graph = new Vector2IntGraph<Node<Vector2Int>>(mapDimensions.x, mapDimensions.y);
         TH = new Townhall(new Vector2Int(0, 0));
@@ -58,7 +59,7 @@ public class GameManager : MonoBehaviour
         GV.ColorWithVoronoi();
 
         if (MM != null && MM.mines != null && MM.mines.Count >= 2)
-        { 
+        {
             //Voronoi.SpawnBisectorBetweenMines(transform, MM, 0, 1, GV.TileSpacing, mapDimensions);
             //Voronoi.SpawnBisectorBetweenMines(transform, MM, 1, 2, GV.TileSpacing, mapDimensions);
             //Voronoi.SpawnBisectorBetweenMines(transform, MM, 0, 2, GV.TileSpacing, mapDimensions);
@@ -93,11 +94,11 @@ public class GameManager : MonoBehaviour
 
     private void AdjustCameraToGrid()
     {
-        Camera cam = Camera.main;   
+        Camera cam = Camera.main;
         float centerX = (mapDimensions.x - 1) / 2f;
         float centerY = (mapDimensions.y - 1) / 2f;
         cam.transform.position = new Vector3(centerX, centerY, cam.transform.position.z);
-    
+
         float aspect = cam.aspect;
         float sizeX = mapDimensions.x / (2f * aspect);
         float sizeY = mapDimensions.y / 2f;
@@ -110,6 +111,14 @@ public class GameManager : MonoBehaviour
         miner.GetComponent<Miner>().townhall = TH;
     }
 
+    public void SpawnCaravan() {
+        Instantiate(caravan, new Vector3(0, 0, 0), Quaternion.identity);        
+        caravan.GetComponent<Caravan>().GV = GV;
+        caravan.GetComponent<Caravan>().townhall = TH;
+    }
+
+
+    //DEBUG METHOD
     public void SupplyFoodToMines() { 
         foreach (GoldMine mine in MM.Mines) {
             mine.foodStored = 10;
