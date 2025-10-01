@@ -19,6 +19,11 @@ namespace KarplusParcial1.Management
         public event Action<GoldMine> MineActivated;
         public event Action<GoldMine> MineDeactivatedByActivity;
 
+        public GoldMineManager()
+        {
+            AlarmManager.OnAlarmRaised += HandleAlarmRaised;
+        }
+
         public void AddMine(GoldMine mine)
         {
             if (mine == null) return;
@@ -129,6 +134,24 @@ namespace KarplusParcial1.Management
             }
             return best;
         }
+
+        private void HandleAlarmRaised()
+        {
+            ClearAllActiveMiners();
+        }
+
+        public void ClearAllActiveMiners()
+        {
+           
+            var snapshot = activeMines.ToArray();
+            foreach (var mine in snapshot)
+            {
+                if (mine == null) continue;
+                mine.ClearMiners();
+            }
+            activeMines.Clear();
+        }
+
         public void CallExist()
         {
             Debug.Log("GM exists");

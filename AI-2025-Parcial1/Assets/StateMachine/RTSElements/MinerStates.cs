@@ -1,5 +1,4 @@
-﻿
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using KarplusParcial1.FSM.Core;
 using KarplusParcial1.Graph;
@@ -58,7 +57,9 @@ namespace KarplusParcial1.FSM.States
             }
 
             path = traveler.FindPath(startNode, destination, GV);
+            if (path == null) path = new List<Node<Vector2Int>>();
             currentPathIndex = 0;
+            snapTimer = 0f;
 
             BehaviourActions behaviourActions = new BehaviourActions();
             behaviourActions.AddMainThreadableBehaviour(0, () =>
@@ -126,6 +127,18 @@ namespace KarplusParcial1.FSM.States
             });
             return behaviourActions;
         }
+
+        public override BehaviourActions GetOnExitBehaviours(params object[] parameters)
+        {
+            BehaviourActions behaviourActions = new BehaviourActions();
+            behaviourActions.AddMainThreadableBehaviour(0, () =>
+            {
+                path?.Clear();
+                currentPathIndex = 0;
+                snapTimer = 0f;
+            });
+            return behaviourActions;
+        }
     }
 
     public class MinerMoveToTown : State
@@ -155,6 +168,7 @@ namespace KarplusParcial1.FSM.States
             if (path == null) path = new List<Node<Vector2Int>>();
 
             currentPathIndex = 0;
+            snapTimer = 0f;
             BehaviourActions behaviourActions = new BehaviourActions();
             behaviourActions.AddMainThreadableBehaviour(0, () =>
             {
@@ -224,6 +238,18 @@ namespace KarplusParcial1.FSM.States
 
             return behaviourActions;
 
+        }
+
+        public override BehaviourActions GetOnExitBehaviours(params object[] parameters)
+        {
+            BehaviourActions behaviourActions = new BehaviourActions();
+            behaviourActions.AddMainThreadableBehaviour(0, () =>
+            {
+                path?.Clear();
+                currentPathIndex = 0;
+                snapTimer = 0f;
+            });
+            return behaviourActions;
         }
 
 

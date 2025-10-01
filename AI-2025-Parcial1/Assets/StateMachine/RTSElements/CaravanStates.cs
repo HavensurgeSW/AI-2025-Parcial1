@@ -70,6 +70,7 @@ namespace KarplusParcial1.FSM.States
                 Debug.Log("CaravanMovingState: no active mine found -> will not start moving.");
                 path = new List<Node<Vector2Int>>();
                 currentPathIndex = 0;
+                snapTimer = 0f;
                 BehaviourActions behaviourActionsNoMove = new BehaviourActions();
                 behaviourActionsNoMove.AddMainThreadableBehaviour(0, () => { });
                 return behaviourActionsNoMove;
@@ -77,6 +78,7 @@ namespace KarplusParcial1.FSM.States
 
             path = traveler.FindPath(startNode, destination, GV) ?? new List<Node<Vector2Int>>();
             currentPathIndex = 0;
+            snapTimer = 0f;
             BehaviourActions behaviourActions = new BehaviourActions();
             behaviourActions.AddMainThreadableBehaviour(0, () =>
             {
@@ -93,6 +95,10 @@ namespace KarplusParcial1.FSM.States
 
             behaviourActions.AddMainThreadableBehaviour(0, () =>
             {
+                if (caravanTransform == null) return;
+                if (GV == null) return;
+                if (path == null || path.Count == 0) return;
+
                 snapTimer += deltaTime;
 
                 if (snapTimer < snapInterval)
@@ -101,6 +107,8 @@ namespace KarplusParcial1.FSM.States
                 while (snapTimer >= snapInterval && currentPathIndex < path.Count)
                 {
                     Node<Vector2Int> targetNode = path[currentPathIndex];
+                    if (targetNode == null) break;
+
                     Vector2Int coord = targetNode.GetCoordinate();
                     Vector3 targetPos = new Vector3(coord.x * GV.TileSpacing, coord.y * GV.TileSpacing, caravanTransform.position.z);
 
@@ -133,6 +141,18 @@ namespace KarplusParcial1.FSM.States
                     }
                     OnFlag?.Invoke(Caravan.Flags.OnTargetReach);
                 }
+            });
+            return behaviourActions;
+        }
+
+        public override BehaviourActions GetOnExitBehaviours(params object[] parameters)
+        {
+            BehaviourActions behaviourActions = new BehaviourActions();
+            behaviourActions.AddMainThreadableBehaviour(0, () =>
+            {
+                path?.Clear();
+                currentPathIndex = 0;
+                snapTimer = 0f;
             });
             return behaviourActions;
         }
@@ -186,10 +206,12 @@ namespace KarplusParcial1.FSM.States
             GV = parameters[2] as GraphView;
             traveler.pathfinder = new AStarCaravan<Node<Vector2Int>>();
 
-            path = traveler.FindPath(startNode, destination, GV);
+            path = traveler.FindPath(startNode, destination, GV) ?? new List<Node<Vector2Int>>();
 
             currentPathIndex = 0;
+            snapTimer = 0f;
             BehaviourActions behaviourActions = new BehaviourActions();
+            behaviourActions.AddMainThreadableBehaviour(0, () => { });
             return behaviourActions;
         }
 
@@ -202,6 +224,9 @@ namespace KarplusParcial1.FSM.States
 
             behaviourActions.AddMainThreadableBehaviour(0, () =>
             {
+                if (caravanTransform == null) return;
+                if (GV == null) return;
+                if (path == null || path.Count == 0) return;
 
                 snapTimer += deltaTime;
 
@@ -211,6 +236,8 @@ namespace KarplusParcial1.FSM.States
                 while (snapTimer >= snapInterval && currentPathIndex < path.Count)
                 {
                     Node<Vector2Int> targetNode = path[currentPathIndex];
+                    if (targetNode == null) break;
+
                     Vector2Int coord = targetNode.GetCoordinate();
                     Vector3 targetPos = new Vector3(coord.x * GV.TileSpacing, coord.y * GV.TileSpacing, caravanTransform.position.z);
 
@@ -242,12 +269,24 @@ namespace KarplusParcial1.FSM.States
                         startNode.SetCoordinate(path[path.Count - 1].GetCoordinate());
                     }
                     if (!wasAlarmed)
-                        OnFlag?.Invoke(Miner.Flags.OnTargetReach);
+                        OnFlag?.Invoke(Caravan.Flags.OnTargetReach);
                 }
             });
 
             return behaviourActions;
 
+        }
+
+        public override BehaviourActions GetOnExitBehaviours(params object[] parameters)
+        {
+            BehaviourActions behaviourActions = new BehaviourActions();
+            behaviourActions.AddMainThreadableBehaviour(0, () =>
+            {
+                path?.Clear();
+                currentPathIndex = 0;
+                snapTimer = 0f;
+            });
+            return behaviourActions;
         }
     }
 

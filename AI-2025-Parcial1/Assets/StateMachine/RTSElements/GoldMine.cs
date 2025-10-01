@@ -76,5 +76,12 @@ namespace KarplusParcial1.RTSElements
                 OnDeactivatedByActivity?.Invoke(this);
             }
         }
+
+        public void ClearMiners()
+        {
+            if (activeMinerCount <= 0) return;
+            activeMinerCount = 0;
+            OnDeactivatedByActivity?.Invoke(this);
+        }
     }
 }

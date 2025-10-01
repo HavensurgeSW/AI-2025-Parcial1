@@ -41,7 +41,6 @@ namespace KarplusParcial1.RTSElements
         }
 
         public FSM<State, Flags> caravanFsm;
-        private State previousState;
         private bool wasAlarmed = false;
 
         public void Start()
@@ -88,7 +87,7 @@ namespace KarplusParcial1.RTSElements
         private void HandleAlarmRaised()
         {
             wasAlarmed = true;
-            caravanFsm.ForceState(State.MoveToTown);
+            caravanFsm.ForceSetState(State.MoveToTown);
         }
 
         private void HandleAlarmCleared()
@@ -96,13 +95,14 @@ namespace KarplusParcial1.RTSElements
             if (wasAlarmed)
             {
                 wasAlarmed = false;
-                caravanFsm.ForceState(State.MoveToTarget);
+                caravanFsm.ForceSetState(State.MoveToTarget);
             }
         }
 
         private void Update()
         {
             caravanFsm.Tick();
+
         }
 
 
