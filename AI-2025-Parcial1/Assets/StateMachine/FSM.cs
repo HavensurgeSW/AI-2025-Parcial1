@@ -41,7 +41,7 @@ public class FSM<StateType, FlagType>
         behaviourOnTickParameters = new Dictionary<int, Func<object[]>>();
         behaviourOnEnterParameters = new Dictionary<int, Func<object[]>>();
         behaviourOnExitParameters = new Dictionary<int, Func<object[]>>();
-        ForceState(defaultState);
+        ForceSetState(defaultState);
     }
 
     public void AddState<TState>(StateType stateIndex, 
@@ -61,10 +61,25 @@ public class FSM<StateType, FlagType>
         }
     }
 
-    private void ForceState(StateType state)
+    public void ForceState(StateType state)
     {
         currentState = Convert.ToInt32(state);
         //ExecuteBehaviour(GetCurrentOnEnterBehaviour);
+    }
+
+    
+    public void ForceSetState(StateType state)
+    {
+        if (states.ContainsKey(currentState))
+        {
+            ExecuteBehaviour(GetCurrentOnExitBehaviour);
+        }
+        currentState = Convert.ToInt32(state);
+
+        if (states.ContainsKey(currentState))
+        {
+            ExecuteBehaviour(GetCurrentOnEnterBehaviour);
+        }
     }
 
     public void SetTransition(StateType originalState, FlagType flag, StateType destinationState, Action onTransition = null)

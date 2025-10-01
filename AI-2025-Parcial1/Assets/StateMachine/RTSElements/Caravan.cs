@@ -29,17 +29,21 @@ public class Caravan : MonoBehaviour
         OnTargetReach,
         OnReachedTown,
         OnSpawned,
-        OnMineDepleted
+        OnMineDepleted,
+        AlarmRaised,
+        AlarmCleared
     }
 
     public FSM<State, Flags> caravanFsm;
+    private State previousState;
+    private bool wasAlarmed = false;
+
     public void Start()
     {
         home.SetCoordinate(townhall.Position);
         graphPos.SetCoordinate(new Vector2Int(0, 0));
         caravanFsm = new FSM<State, Flags>(State.Idle);
         currentStorage = 10;
-
 
         caravanFsm.AddState<CaravanIdleState>(State.Idle);
         caravanFsm.AddState<CaravanMovingState>(State.MoveToTarget, onTickParameters: () => new object[] { this.transform, Time.deltaTime }, onEnterParameters: () => new object[] { graphPos, targetPos, GV });
@@ -50,10 +54,36 @@ public class Caravan : MonoBehaviour
         caravanFsm.SetTransition(State.Idle, Flags.OnSpawned, State.MoveToTarget);
         caravanFsm.SetTransition(State.MoveToTarget, Flags.OnTargetReach, State.Depositing);
         caravanFsm.SetTransition(State.Depositing, Flags.OnInventoryEmpty, State.MoveToTown);
-        ////caravanFsm.SetTransition(State.Mining, Flags.OnMineDepleted, State.MoveToTarget);
         caravanFsm.SetTransition(State.MoveToTown, Flags.OnTargetReach, State.Restocking);
         caravanFsm.SetTransition(State.Restocking, Flags.OnInventoryFull, State.MoveToTarget);
+
+        // Subscribe to alarm events
+        AlarmManager.OnAlarmRaised += HandleAlarmRaised;
+        AlarmManager.OnAlarmCleared += HandleAlarmCleared;
     }
+
+    private void OnDestroy()
+    {
+        AlarmManager.OnAlarmRaised -= HandleAlarmRaised;
+        AlarmManager.OnAlarmCleared -= HandleAlarmCleared;
+    }
+
+    private void HandleAlarmRaised()
+    {
+
+        wasAlarmed = true;            
+        caravanFsm.ForceState(State.MoveToTown);        
+    }
+
+    private void HandleAlarmCleared()
+    {
+        if (wasAlarmed)
+        {
+            wasAlarmed = false;
+            caravanFsm.ForceState(previousState);
+        }
+    }
+
     private void Update()
     {
         caravanFsm.Tick();

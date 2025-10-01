@@ -323,7 +323,7 @@ public class MinerIdle : State {
 
         behaviourActions.SetTransitionBehaviour(() =>
         {            
-            OnFlag?.Invoke(Miner.Flags.OnSpawned);            
+            //OnFlag?.Invoke(Miner.Flags.OnSpawned);            
         });
 
         return behaviourActions;

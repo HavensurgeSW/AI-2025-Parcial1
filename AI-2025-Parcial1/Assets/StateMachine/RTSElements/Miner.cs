@@ -31,18 +31,21 @@ class Miner : MonoBehaviour
         OnTargetReach,
         OnReachedTown,
         OnSpawned,
-        OnMineDepleted
+        OnMineDepleted,
+        AlarmRaised,
+        AlarmCleared
     }
 
 
     public FSM<State, Flags> minerFsm;
+    private State previousState;
+    private bool wasAlarmed = false;
 
     public void Start()
     {
         home.SetCoordinate(townhall.Position);
         graphPos.SetCoordinate(new Vector2Int(0,0));
-        minerFsm = new FSM<State, Flags>(State.Idle);
-        
+        minerFsm = new FSM<State, Flags>(State.MoveToTown);
 
         minerFsm.AddState<MinerIdle>(State.Idle);
         minerFsm.AddState<MinerMovingState>(State.MoveToTarget, onTickParameters: () => new object[] {this.transform, Time.deltaTime}, onEnterParameters:()=>new object[] {graphPos, targetPos, GV});
@@ -56,6 +59,31 @@ class Miner : MonoBehaviour
         minerFsm.SetTransition(State.Mining, Flags.OnMineDepleted, State.MoveToTarget);
         minerFsm.SetTransition(State.MoveToTown, Flags.OnTargetReach, State.Depositing);
         minerFsm.SetTransition(State.Depositing, Flags.OnInventoryEmpty, State.MoveToTarget);
+
+        AlarmManager.OnAlarmRaised += HandleAlarmRaised;
+        AlarmManager.OnAlarmCleared += HandleAlarmCleared;
+    }
+
+    private void OnDestroy()
+    {
+        AlarmManager.OnAlarmRaised -= HandleAlarmRaised;
+        AlarmManager.OnAlarmCleared -= HandleAlarmCleared;
+    }
+
+    private void HandleAlarmRaised()
+    {       
+        Debug.Log("Miner alarm raised, going to town!");
+        wasAlarmed = true;
+        minerFsm.ForceSetState(State.MoveToTown);        
+    }
+
+    private void HandleAlarmCleared()
+    {
+        if (wasAlarmed)
+        {
+            wasAlarmed = false;
+            minerFsm.ForceSetState(State.MoveToTarget);
+        }
     }
 
     private void Update()
