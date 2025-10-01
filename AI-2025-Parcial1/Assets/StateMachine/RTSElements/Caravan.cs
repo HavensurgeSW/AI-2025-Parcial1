@@ -2,11 +2,9 @@ using UnityEngine;
 
 public class Caravan : MonoBehaviour
 {
-    int storageSize = 10;
-    int currentStorage = 0;
 
     public Townhall townhall = new Townhall();
-    InventoryData inventoryData = new InventoryData();
+    InventoryData inventory = new InventoryData();
 
     public GraphView GV;
     Node<Vector2Int> graphPos = new Node<Vector2Int>();
@@ -43,13 +41,14 @@ public class Caravan : MonoBehaviour
         home.SetCoordinate(townhall.Position);
         graphPos.SetCoordinate(new Vector2Int(0, 0));
         caravanFsm = new FSM<State, Flags>(State.Idle);
-        currentStorage = 10;
+        inventory.maxInventory = 10;
+        inventory.inventory = inventory.maxInventory;
 
         caravanFsm.AddState<CaravanIdleState>(State.Idle);
         caravanFsm.AddState<CaravanMovingState>(State.MoveToTarget, onTickParameters: () => new object[] { this.transform, Time.deltaTime }, onEnterParameters: () => new object[] { graphPos, targetPos, GV });
         caravanFsm.AddState<CaravanMovingToTownState>(State.MoveToTown, onTickParameters: () => new object[] { this.transform, Time.deltaTime }, onEnterParameters: () => new object[] { graphPos, home, GV });
-        caravanFsm.AddState<CaravanRestockingState>(State.Restocking, onTickParameters: () => new object[] {currentStorage, storageSize });
-        caravanFsm.AddState<CaravanDepositingState>(State.Depositing, onTickParameters: () => new object[] { GV.mineManager.GetMineAt(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y)), currentStorage });
+        caravanFsm.AddState<CaravanRestockingState>(State.Restocking, onTickParameters: () => new object[] {inventory});
+        caravanFsm.AddState<CaravanDepositingState>(State.Depositing, onTickParameters: () => new object[] { GV.mineManager.GetMineAt(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y)), inventory });
 
         caravanFsm.SetTransition(State.Idle, Flags.OnSpawned, State.MoveToTarget);
         caravanFsm.SetTransition(State.MoveToTarget, Flags.OnTargetReach, State.Depositing);

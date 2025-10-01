@@ -122,21 +122,24 @@ public class CaravanDepositingState : State
     public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
     {
         GoldMine goldMine = parameters[0] as GoldMine;
-        int currentStorage = (int)parameters[1];
+        InventoryData inv = parameters[1] as InventoryData;
 
         BehaviourActions behaviourActions = new BehaviourActions();
 
 
         behaviourActions.AddMultiThreadableBehaviour(0, () =>
         {
-            goldMine.foodStored += currentStorage;
-            Debug.Log($"Deposited {currentStorage} food to the Mine. Total food: {goldMine.foodStored}");
+            goldMine.foodStored += inv.inventory;
+            inv.inventory = 0;
+            Debug.Log($"Deposited {inv.inventory} food to the Mine. Total food: {goldMine.foodStored}");
         });
 
         behaviourActions.SetTransitionBehaviour(() =>
-        {
-            OnFlag?.Invoke(Caravan.Flags.OnInventoryEmpty);
-            Debug.Log("Transitioning from Depositing to MoveToTown");
+        {          
+            
+             Debug.Log("Transitioning from Depositing to MoveToTown");
+             OnFlag?.Invoke(Caravan.Flags.OnInventoryEmpty);
+            
         });
 
         return behaviourActions;
@@ -153,7 +156,7 @@ public class CaravanMovingToTownState : State
     List<Node<Vector2Int>> path = new List<Node<Vector2Int>>();
 
     //Game movement
-    private Transform minerTransform;
+    private Transform caravanTransform;
     private int currentPathIndex;
     // Snapping configuration
     private float snapInterval = 0.5f;
@@ -164,6 +167,7 @@ public class CaravanMovingToTownState : State
         startNode = parameters[0] as Node<Vector2Int>;
         destination = parameters[1] as Node<Vector2Int>;
         GV = parameters[2] as GraphView;
+        traveler.pathfinder = new AStarCaravan<Node<Vector2Int>>();
 
         path = traveler.FindPath(startNode, destination, GV);
         
@@ -179,9 +183,8 @@ public class CaravanMovingToTownState : State
     public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
     {
         BehaviourActions behaviourActions = new BehaviourActions();
-        minerTransform = parameters[0] as Transform;
+        caravanTransform = parameters[0] as Transform;
         float deltaTime = (float)parameters[1];
-        //speed = (float)parameters[1];
 
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
@@ -195,9 +198,9 @@ public class CaravanMovingToTownState : State
             {
                 Node<Vector2Int> targetNode = path[currentPathIndex];
                 Vector2Int coord = targetNode.GetCoordinate();
-                Vector3 targetPos = new Vector3(coord.x * GV.TileSpacing, coord.y * GV.TileSpacing, minerTransform.position.z);
+                Vector3 targetPos = new Vector3(coord.x * GV.TileSpacing, coord.y * GV.TileSpacing, caravanTransform.position.z);
 
-                minerTransform.position = targetPos;
+                caravanTransform.position = targetPos;
 
                 if (startNode != null)
                 {
@@ -238,15 +241,14 @@ public class CaravanRestockingState : State
 {
     public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
     {
-        int currentStorage = (int)parameters[0];
-        int storageSize = (int)parameters[1];
+        InventoryData inv = parameters[0] as InventoryData;
 
         BehaviourActions behaviourActions = new BehaviourActions();
 
 
         behaviourActions.AddMultiThreadableBehaviour(0, () =>
         {
-            currentStorage = storageSize;
+            inv.inventory = inv.maxInventory;
         });
 
         behaviourActions.SetTransitionBehaviour(() =>

@@ -8,7 +8,7 @@ public class AStarCaravan<NodeType> : Pathfinder<NodeType> where NodeType : INod
 
     private int gridMinX, gridMinY, gridWidth, gridHeight;
     int roadCost = 1;
-    int nonRoadCost = 3;
+    int nonRoadCost = 10;
 
     protected override int Distance(NodeType A, NodeType B)
     {        

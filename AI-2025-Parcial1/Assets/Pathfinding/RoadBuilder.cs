@@ -98,7 +98,5 @@ public static class RoadBuilder
                 }
             }
         }
-
-        Debug.Log("RoadBuilder: finished marking roads to mines.");
     }
 }

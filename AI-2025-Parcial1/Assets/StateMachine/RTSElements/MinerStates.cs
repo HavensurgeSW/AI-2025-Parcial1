@@ -56,6 +56,9 @@ public class MinerMovingState : State
         }
 
         path = traveler.FindPath(startNode, destination, GV);
+        // Normalize null -> empty list so tick logic can safely inspect path.Count
+        if (path == null) path = new List<Node<Vector2Int>>();
+
         currentPathIndex = 0;
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMainThreadableBehaviour(0, () =>
@@ -69,10 +72,16 @@ public class MinerMovingState : State
     {
         BehaviourActions behaviourActions = new BehaviourActions();
         minerTransform = parameters[0] as Transform;
-        float deltaTime = (float)parameters[1]; 
+        float deltaTime = (float)parameters[1];       
+
 
         behaviourActions.AddMainThreadableBehaviour(0, () =>
-        {            
+        {
+            // Defensive guards to avoid NullReferenceExceptions
+            if (minerTransform == null) return;
+            if (GV == null) return;
+            if (path == null || path.Count == 0) return;
+
             snapTimer += deltaTime;
             
             if (snapTimer < snapInterval)
@@ -81,6 +90,8 @@ public class MinerMovingState : State
             while (snapTimer >= snapInterval && currentPathIndex < path.Count)
             {
                 Node<Vector2Int> targetNode = path[currentPathIndex];
+                if (targetNode == null) break;
+
                 Vector2Int coord = targetNode.GetCoordinate();
                 Vector3 targetPos = new Vector3(coord.x * GV.TileSpacing, coord.y * GV.TileSpacing, minerTransform.position.z);
 
@@ -141,6 +152,9 @@ public class MinerMoveToTown : State
         GV = parameters[2] as GraphView;
 
         path = traveler.FindPath(startNode, destination, GV);
+        // Normalize null -> empty list
+        if (path == null) path = new List<Node<Vector2Int>>();
+
         currentPathIndex = 0;
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMainThreadableBehaviour(0, () =>
@@ -159,6 +173,9 @@ public class MinerMoveToTown : State
 
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
+            if (minerTransform == null) return;
+            if (GV == null) return;
+            if (path == null || path.Count == 0) return;
 
             snapTimer += deltaTime;
 
@@ -168,6 +185,8 @@ public class MinerMoveToTown : State
             while (snapTimer >= snapInterval && currentPathIndex < path.Count)
             {
                 Node<Vector2Int> targetNode = path[currentPathIndex];
+                if (targetNode == null) break;
+
                 Vector2Int coord = targetNode.GetCoordinate();
                 Vector3 targetPos = new Vector3(coord.x * GV.TileSpacing, coord.y * GV.TileSpacing, minerTransform.position.z);
 
