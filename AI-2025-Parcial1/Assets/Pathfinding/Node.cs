@@ -25,6 +25,10 @@ public class Node<Coordinate> : INode, INode<Coordinate>
     public bool IsRoad() { 
         return road;
     }
+    public void SetRoad(bool isRoad)
+    {
+        road = isRoad;
+    }
     public void SetNearestMine(Vector2Int mineCoordinate)
     {
         nearestMine = mineCoordinate;

@@ -11,6 +11,7 @@ public class GameManager : MonoBehaviour
 
     public GoldMineManager MM;
     public Townhall TH;
+    
 
     [SerializeField] Vector2Int mapDimensions = new Vector2Int(10, 10);
 
@@ -31,9 +32,9 @@ public class GameManager : MonoBehaviour
     {
         int x, y, mines;
         if (!int.TryParse(mapX.text, out x))
-            x = 10;
+            x = 15;
         if (!int.TryParse(mapY.text, out y))
-            y = 10;
+            y = 15;
         if (!int.TryParse(mineAmount.text, out mines))
             mines = 3;
 
@@ -57,6 +58,9 @@ public class GameManager : MonoBehaviour
         GV.InstantiateTiles();
         //GV.ColorWithTerrain();
         GV.ColorWithVoronoi();
+        RoadBuilder.BuildRoads(GV, new Vector2Int(0,0));
+        GV.OverlayRoads();
+        GV.ColorMines();
 
         if (MM != null && MM.mines != null && MM.mines.Count >= 2)
         {

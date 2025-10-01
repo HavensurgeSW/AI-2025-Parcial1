@@ -5,7 +5,7 @@ using static TreeEditor.TreeEditorHelper;
 
 public class Traveler
 {
-    private AStarPathfinder<Node<Vector2Int>> pathfinder;
+    public Pathfinder<Node<Vector2Int>> pathfinder;
     private Node<Vector2Int> startNode;
     private Node<Vector2Int> destinationNode;
     public Traveler()
@@ -35,14 +35,11 @@ public class Traveler
         mineCoordinate = default;
         if (gv == null) return false;
 
-        // Prefer the GraphView/Voronoi precomputed map (O(1))
         if (gv.nearestMineLookup != null && gv.nearestMineLookup.TryGetValue(coord, out Vector2Int lookup))
         {
             mineCoordinate = lookup;
             return true;
         }
-
-        // Fallback to GraphView helper which may query mine manager (linear in mines)
         if (gv.TryGetNearestMineAt(coord, out Vector2Int fromGV))
         {
             mineCoordinate = fromGV;

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Drawing;
 using UnityEngine;
 
 public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : INode
@@ -10,7 +11,6 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
 
     protected override int Distance(NodeType A, NodeType B)
     {
-        // Toroidal (wrap-around) Manhattan distance when nodes expose Vector2Int coordinates.
         if (A is INode<Vector2Int> a && B is INode<Vector2Int> b)
         {
             Vector2Int ca = a.GetCoordinate();
@@ -26,7 +26,7 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
 
                 return dx + dy;
             }
-            // fallback to plain Manhattan if bounds unknown
+            //Manhattan
             return Mathf.Abs(ca.x - cb.x) + Mathf.Abs(ca.y - cb.y);
         }
 
@@ -73,30 +73,21 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
 
     protected override int MoveToNeighborCost(NodeType A, NodeType B)
     {       
-        // On grid with Vector2Int coords each cardinal move costs 1.
         if (A is INode<Vector2Int> a && B is INode<Vector2Int> b)
         {
-            Vector2Int ca = a.GetCoordinate();
-            Vector2Int cb = b.GetCoordinate();
+            Vector2Int coordA = a.GetCoordinate();
+            Vector2Int coordB = b.GetCoordinate();
 
-            // compute shortest delta considering wrap
             if (gridWidth > 0 && gridHeight > 0)
             {
-                int dxRaw = Mathf.Abs(ca.x - cb.x);
-                int dyRaw = Mathf.Abs(ca.y - cb.y);
-                int dx = Mathf.Min(dxRaw, gridWidth - dxRaw);
-                int dy = Mathf.Min(dyRaw, gridHeight - dyRaw);
+                int deltaxRaw = Mathf.Abs(coordA.x - coordB.x);
+                int deltayRaw = Mathf.Abs(coordA.y - coordB.y);
+                int dx = Mathf.Min(deltaxRaw, gridWidth - deltaxRaw);
+                int dy = Mathf.Min(deltayRaw, gridHeight - deltayRaw);
 
-                if (dx + dy == 1) return 1;
-            }
-            else
-            {
-                int dx = Mathf.Abs(ca.x - cb.x);
-                int dy = Mathf.Abs(ca.y - cb.y);
                 if (dx + dy == 1) return 1;
             }
         }
-
         return 1;
     }
 
@@ -116,20 +107,13 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
 
     public override List<NodeType> FindPath(NodeType startNode, NodeType destinationNode, ICollection<NodeType> graph)
     {
-        if (graph == null || startNode == null || destinationNode == null)
-            return null;
-
-        // Build a mutable list of nodes (we may add start/destination if they are not present)
         graphNodes = new List<NodeType>(graph);
 
-        // Resolve start/destination to nodes from the graph if possible (match by coordinate).
         NodeType start = FindOrAddGraphNode(graphNodes, startNode);
         NodeType goal = FindOrAddGraphNode(graphNodes, destinationNode);
 
-        // Recompute bounds now that graphNodes may have changed
         ComputeGridBounds();
 
-        // Quick check: start == goal
         if (NodesEquals(start, goal))
         {
             graphNodes = null;
@@ -143,11 +127,10 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
         var fScore = new Dictionary<NodeType, int>();
         var parents = new Dictionary<NodeType, NodeType>();
 
-        // Initialize scores
         foreach (var n in graphNodes)
         {
-            gScore[n] = int.MaxValue;
-            fScore[n] = int.MaxValue;
+            gScore[n] = 0;
+            fScore[n] = 0;
         }
 
         gScore[start] = 0;
@@ -304,9 +287,6 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
 
     private Vector2Int WrapCoordinate(Vector2Int input)
     {
-        if (gridWidth <= 0 || gridHeight <= 0)
-            return input;
-
         int wrappedX = (input.x - gridMinX) % gridWidth;
         if (wrappedX < 0) wrappedX += gridWidth;
         wrappedX += gridMinX;

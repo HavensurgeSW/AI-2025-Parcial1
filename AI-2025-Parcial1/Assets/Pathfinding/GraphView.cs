@@ -45,20 +45,11 @@ public class GraphView : MonoBehaviour
             Vector3 pos = new Vector3(coord.x * tileSpacing, coord.y * tileSpacing, 1);
             GameObject tile = Instantiate(tilePrefab, pos, Quaternion.identity, this.transform);
 
-            // give tiles stable names so we can find them later
             tile.name = $"Tile_{coord.x}_{coord.y}";
-
-            var sr = tile.GetComponent<SpriteRenderer>();
-            if (node.IsBlocked())
-                sr.color = Color.red;
-            else if (mineManager.GetMineAt(coord) != null)
-                sr.color = Color.yellow;
-            else
-                sr.color = Color.green;
         }
     }
 
-    public void ColorWithTerrain()
+    public void ColorMines()
     {
         foreach (var node in graph.nodes)
         {
@@ -69,16 +60,11 @@ public class GraphView : MonoBehaviour
             if (child == null) continue;
             var sr = child.GetComponent<SpriteRenderer>();
 
-            if (node.IsBlocked())
-                sr.color = Color.red;
-            else if (mineManager.GetMineAt(coord) != null)
+            if (mineManager.GetMineAt(coord) != null)
                 sr.color = Color.yellow;
-            else
-                sr.color = Color.green;
         }
     }
 
-    // Delegate Voronoi work to the new Voronoi class.
     public void ColorWithVoronoi()
     {
         Voronoi vor = new Voronoi(mineManager, wrapWorld, mapSize);
@@ -87,6 +73,28 @@ public class GraphView : MonoBehaviour
         nearestMineLookup.Clear();
         foreach (var kv in vor.nearestMineLookup)
             nearestMineLookup[kv.Key] = kv.Value;
+    }
+    public void OverlayRoads()
+    {
+        if (graph == null || graph.nodes == null)
+            return;
+
+        foreach (var node in graph.nodes)
+        {
+            if (!node.IsRoad())
+                continue;
+
+            Vector2Int coord = node.GetCoordinate();
+            var child = transform.Find($"Tile_{coord.x}_{coord.y}");
+            if (child == null)
+                continue;
+
+            var sr = child.GetComponent<SpriteRenderer>();
+            if (sr == null)
+                continue;
+
+            sr.color = Color.grey;
+        }
     }
 
 

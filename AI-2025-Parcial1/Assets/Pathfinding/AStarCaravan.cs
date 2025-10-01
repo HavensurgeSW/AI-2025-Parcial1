@@ -7,10 +7,11 @@ public class AStarCaravan<NodeType> : Pathfinder<NodeType> where NodeType : INod
     private List<NodeType> graphNodes;
 
     private int gridMinX, gridMinY, gridWidth, gridHeight;
+    int roadCost = 1;
+    int nonRoadCost = 3;
 
     protected override int Distance(NodeType A, NodeType B)
-    {
-        // Toroidal (wrap-around) Manhattan distance when nodes expose Vector2Int coordinates.
+    {        
         if (A is INode<Vector2Int> a && B is INode<Vector2Int> b)
         {
             Vector2Int ca = a.GetCoordinate();
@@ -26,7 +27,6 @@ public class AStarCaravan<NodeType> : Pathfinder<NodeType> where NodeType : INod
 
                 return dx + dy;
             }
-            // fallback to plain Manhattan if bounds unknown
             return Mathf.Abs(ca.x - cb.x) + Mathf.Abs(ca.y - cb.y);
         }
 
@@ -73,16 +73,12 @@ public class AStarCaravan<NodeType> : Pathfinder<NodeType> where NodeType : INod
 
     protected override int MoveToNeighborCost(NodeType A, NodeType B)
     {
-        // Caravan-specific costs: prefer roads (lower cost). Non-road moves are more expensive.
-        // On grid with Vector2Int coords each cardinal move has a base cost; here we
-        // return 1 for moves involving a road node, 2 for moves across non-road tiles.
 
         if (A is INode<Vector2Int> a && B is INode<Vector2Int> b)
         {
             Vector2Int ca = a.GetCoordinate();
             Vector2Int cb = b.GetCoordinate();
 
-            // compute shortest delta considering wrap
             if (gridWidth > 0 && gridHeight > 0)
             {
                 int dxRaw = Mathf.Abs(ca.x - cb.x);
@@ -94,7 +90,7 @@ public class AStarCaravan<NodeType> : Pathfinder<NodeType> where NodeType : INod
                 {
                     bool aRoad = A.IsRoad();
                     bool bRoad = B.IsRoad();
-                    return (aRoad || bRoad) ? 1 : 2;
+                    return (aRoad || bRoad) ? roadCost : nonRoadCost;
                 }
             }
             else
@@ -105,13 +101,11 @@ public class AStarCaravan<NodeType> : Pathfinder<NodeType> where NodeType : INod
                 {
                     bool aRoad = A.IsRoad();
                     bool bRoad = B.IsRoad();
-                    return (aRoad || bRoad) ? 1 : 2;
+                    return (aRoad || bRoad) ? roadCost : nonRoadCost;
                 }
             }
         }
-
-        // fallback higher cost for non-adjacent or unknown cases
-        return 2;
+        return nonRoadCost;
     }
 
     protected override bool NodesEquals(NodeType A, NodeType B)
@@ -242,10 +236,7 @@ public class AStarCaravan<NodeType> : Pathfinder<NodeType> where NodeType : INod
                 if (n is INode<Vector2Int> nWithCoord && nWithCoord.GetCoordinate() == coord)
                     return n;
             }
-
-            // Not found in graph: add the probe node so algorithm can start/finish at its coordinate.
             nodes.Add(probe);
-            // bounds will be recomputed by caller
             return probe;
         }
 

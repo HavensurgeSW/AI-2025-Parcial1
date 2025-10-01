@@ -6,7 +6,7 @@ public class CaravanMovingState : State
 {
     //Pathfinding 
     private GraphView GV;
-    private Traveler traveler = new Traveler();
+    private Traveler traveler = new Traveler();    
     private Node<Vector2Int> startNode = new Node<Vector2Int>();
     private Node<Vector2Int> destination = new Node<Vector2Int>();
     List<Node<Vector2Int>> path = new List<Node<Vector2Int>>();
@@ -24,6 +24,8 @@ public class CaravanMovingState : State
         startNode = parameters[0] as Node<Vector2Int>;
         destination = parameters[1] as Node<Vector2Int>;
         GV = parameters[2] as GraphView;
+        traveler.pathfinder = new AStarCaravan<Node<Vector2Int>>();
+
 
         // Try to resolve the actual node from the graph (same coordinate, real instance)
         Node<Vector2Int> graphNode = null;
@@ -164,6 +166,7 @@ public class CaravanMovingToTownState : State
         GV = parameters[2] as GraphView;
 
         path = traveler.FindPath(startNode, destination, GV);
+        
         currentPathIndex = 0;
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMainThreadableBehaviour(0, () =>

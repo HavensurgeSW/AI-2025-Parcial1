@@ -28,6 +28,7 @@ public class MinerMovingState : State
         startNode = parameters[0] as Node<Vector2Int>;
         destination = parameters[1] as Node<Vector2Int>;
         GV = parameters[2] as GraphView;
+        traveler.pathfinder = new AStarPathfinder<Node<Vector2Int>>();
 
         // Try to resolve the actual node from the graph (same coordinate, real instance)
         Node<Vector2Int> graphNode = null;
@@ -68,9 +69,7 @@ public class MinerMovingState : State
     {
         BehaviourActions behaviourActions = new BehaviourActions();
         minerTransform = parameters[0] as Transform;
-        float deltaTime = (float)parameters[1];
-        //speed = (float)parameters[1];
-
+        float deltaTime = (float)parameters[1]; 
 
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {            
@@ -309,8 +308,7 @@ public class MinerMiningState : State
 }
 public class MinerIdle : State {
     public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
-    {
-        
+    {     
 
 
         BehaviourActions behaviourActions = new BehaviourActions();
