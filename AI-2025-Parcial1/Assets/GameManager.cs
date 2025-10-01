@@ -39,11 +39,11 @@ namespace KarplusParcial1.Management
         {
             int x, y, mines;
             if (!int.TryParse(mapX.text, out x))
-                x = 15;
+                x = 20;
             if (!int.TryParse(mapY.text, out y))
-                y = 15;
+                y = 20;
             if (!int.TryParse(mineAmount.text, out mines))
-                mines = 3;
+                mines = 4;
 
 
             mapDimensions = new Vector2Int(x, y);
@@ -51,7 +51,7 @@ namespace KarplusParcial1.Management
             graph = new Vector2IntGraph<Node<Vector2Int>>(mapDimensions.x, mapDimensions.y);
             TH = new Townhall(new Vector2Int(0, 0));
             MM = new GoldMineManager();
-            MM.CreateMines(mines, 30, new Vector2Int(mapDimensions.x, mapDimensions.y));
+            MM.CreateMines(mines, 60, new Vector2Int(mapDimensions.x, mapDimensions.y));
 
             if (MM != null)
                 MM.MineDepleted += OnMineDepleted;

@@ -21,7 +21,7 @@ namespace KarplusParcial1.RTSElements
         {
             maxGold = 10;
             currentGold = maxGold;
-            foodStored = 2;
+            foodStored = 5;
             activeMinerCount = 0;
         }
         public GoldMine(int maxGold, Vector2Int position)
