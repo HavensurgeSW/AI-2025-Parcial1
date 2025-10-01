@@ -44,9 +44,10 @@ public class Caravan : MonoBehaviour
         inventory.maxInventory = 10;
         inventory.inventory = inventory.maxInventory;
 
+
         caravanFsm.AddState<CaravanIdleState>(State.Idle);
         caravanFsm.AddState<CaravanMovingState>(State.MoveToTarget, onTickParameters: () => new object[] { this.transform, Time.deltaTime }, onEnterParameters: () => new object[] { graphPos, targetPos, GV });
-        caravanFsm.AddState<CaravanMovingToTownState>(State.MoveToTown, onTickParameters: () => new object[] { this.transform, Time.deltaTime }, onEnterParameters: () => new object[] { graphPos, home, GV });
+        caravanFsm.AddState<CaravanMovingToTownState>(State.MoveToTown, onTickParameters: () => new object[] { this.transform, Time.deltaTime, wasAlarmed }, onEnterParameters: () => new object[] { graphPos, home, GV });
         caravanFsm.AddState<CaravanRestockingState>(State.Restocking, onTickParameters: () => new object[] {inventory});
         caravanFsm.AddState<CaravanDepositingState>(State.Depositing, onTickParameters: () => new object[] { GV.mineManager.GetMineAt(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y)), inventory });
 
@@ -56,20 +57,28 @@ public class Caravan : MonoBehaviour
         caravanFsm.SetTransition(State.MoveToTown, Flags.OnTargetReach, State.Restocking);
         caravanFsm.SetTransition(State.Restocking, Flags.OnInventoryFull, State.MoveToTarget);
 
-        // Subscribe to alarm events
         AlarmManager.OnAlarmRaised += HandleAlarmRaised;
         AlarmManager.OnAlarmCleared += HandleAlarmCleared;
+        
+        GV.mineManager.MineActivated += HandleMineActivated;
+        GV.mineManager.MineDeactivatedByActivity += HandleMineDeactivated;
+        
     }
 
     private void OnDestroy()
     {
         AlarmManager.OnAlarmRaised -= HandleAlarmRaised;
         AlarmManager.OnAlarmCleared -= HandleAlarmCleared;
+
+        if (GV != null && GV.mineManager != null)
+        {
+            GV.mineManager.MineActivated -= HandleMineActivated;
+            GV.mineManager.MineDeactivatedByActivity -= HandleMineDeactivated;
+        }
     }
 
     private void HandleAlarmRaised()
     {
-
         wasAlarmed = true;            
         caravanFsm.ForceState(State.MoveToTown);        
     }
@@ -79,7 +88,7 @@ public class Caravan : MonoBehaviour
         if (wasAlarmed)
         {
             wasAlarmed = false;
-            caravanFsm.ForceState(previousState);
+            caravanFsm.ForceState(State.MoveToTarget);
         }
     }
 
@@ -87,8 +96,55 @@ public class Caravan : MonoBehaviour
     {
         caravanFsm.Tick();
     }
+
+
     public void SetTargetToClosestMine()
     {
-        targetPos.SetCoordinate(GV.mineManager.FindNearest(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y)).Position);
+        if (GV == null)
+        {
+            GV = FindFirstObjectByType<GraphView>();
+            if (GV == null)
+            {
+                Debug.LogWarning("SetTargetToClosestMine: GraphView is null. Can't find nearest mine.");
+                return;
+            }
+        }
+
+        if (GV.mineManager == null)
+        {
+            Debug.LogWarning("SetTargetToClosestMine: mineManager is null. Can't find nearest mine.");
+            return;
+        }
+
+        Vector2Int origin = new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y);
+        GoldMine nearest = GV.mineManager.FindNearestActive(origin);
+        if (nearest == null)
+        {
+            Debug.LogWarning($"SetTargetToClosestMine: no active nearest mine found from {origin}.");
+            return;
+        }
+
+        targetPos.SetCoordinate(nearest.Position);
+    }
+
+    private void HandleMineActivated(GoldMine activated)
+    {
+        Debug.Log("Caravan detected mine activation.");
+        caravanFsm.ForceSetState(State.MoveToTarget);
+
+    }
+
+    private void HandleMineDeactivated(GoldMine deactivated)
+    {
+        if (GV == null || GV.mineManager == null) return;
+
+        var targetCoord = new Vector2Int(targetPos.GetCoordinate().x, targetPos.GetCoordinate().y);
+        var currentTarget = GV.mineManager.GetMineAt(targetCoord);
+
+        // Si el target actual es el que se desactivó, buscar el otro mas cercano
+        if (currentTarget == null || currentTarget == deactivated)
+        {
+            SetTargetToClosestMine();
+        }
     }
 }

@@ -42,15 +42,21 @@ class Miner : MonoBehaviour
     private bool wasAlarmed = false;
 
     public void Start()
-    {
-        home.SetCoordinate(townhall.Position);
+    {        
+        var homePos = townhall != null ? townhall.Position : new Vector2Int(0, 0);
+        home.SetCoordinate(homePos);
+
         graphPos.SetCoordinate(new Vector2Int(0,0));
         minerFsm = new FSM<State, Flags>(State.MoveToTown);
 
         minerFsm.AddState<MinerIdle>(State.Idle);
         minerFsm.AddState<MinerMovingState>(State.MoveToTarget, onTickParameters: () => new object[] {this.transform, Time.deltaTime}, onEnterParameters:()=>new object[] {graphPos, targetPos, GV});
-        minerFsm.AddState<MinerMoveToTown>(State.MoveToTown, onTickParameters: () => new object[] {this.transform, Time.deltaTime}, onEnterParameters:()=>new object[] {graphPos, home, GV});
-        minerFsm.AddState<MinerMiningState>(State.Mining, onTickParameters: () => new object[] { GV.mineManager.GetMineAt(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y)), miningRate, inventoryData, this});
+        minerFsm.AddState<MinerMoveToTown>(State.MoveToTown, onTickParameters: () => new object[] {this.transform, Time.deltaTime, wasAlarmed}, onEnterParameters:()=>new object[] {graphPos, home, GV});
+
+        minerFsm.AddState<MinerMiningState>(State.Mining, onTickParameters: () => new object[] {
+            (GV != null && GV.mineManager != null) ? GV.mineManager.GetMineAt(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y)) : null,
+            miningRate, inventoryData, this}, onEnterParameters: ()=> new object[] { GV.mineManager.GetMineAt(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y))});
+
         minerFsm.AddState<MinerDepositingState>(State.Depositing, onTickParameters: () => new object[] { townhall, inventoryData}, null, onExitParameters: () => new object[] { this });
 
         minerFsm.SetTransition(State.Idle, Flags.OnSpawned, State.MoveToTarget);
@@ -90,8 +96,17 @@ class Miner : MonoBehaviour
     {
         minerFsm.Tick();
     }
-    public void SetTargetToClosestMine() { 
-        targetPos.SetCoordinate(GV.mineManager.FindNearest(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y)).Position);
+
+ 
+    public void SetTargetToClosestMine()
+    {        
+        var origin = graphPos.GetCoordinate();
+        var nearest = GV.mineManager.FindNearest(new Vector2Int(origin.x, origin.y));
+        if (nearest == null){            
+            return;
+        }
+
+        targetPos.SetCoordinate(nearest.Position);
     }
 }
 

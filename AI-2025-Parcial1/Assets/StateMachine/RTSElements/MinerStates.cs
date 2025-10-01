@@ -19,6 +19,7 @@ public class MinerMovingState : State
     //Game movement
     private Transform minerTransform;
     private int currentPathIndex;
+
     // Snapping configuration
     private float snapInterval = 0.5f;
     private float snapTimer = 0f;
@@ -55,7 +56,6 @@ public class MinerMovingState : State
         }
 
         path = traveler.FindPath(startNode, destination, GV);
-        Debug.Log("Path lenght: " + path.Count);
         currentPathIndex = 0;
 
         BehaviourActions behaviourActions = new BehaviourActions();
@@ -75,7 +75,6 @@ public class MinerMovingState : State
 
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
-            // Defensive guards to avoid NullReferenceExceptions
             if (minerTransform == null) return;
             if (GV == null) return;
             if (path == null || path.Count == 0) return;
@@ -150,7 +149,7 @@ public class MinerMoveToTown : State
         GV = parameters[2] as GraphView;
 
         path = traveler.FindPath(startNode, destination, GV);
-        // Normalize null -> empty list
+        //si el path devuelve null, inicio la variable para que no explote todo
         if (path == null) path = new List<Node<Vector2Int>>();
 
         currentPathIndex = 0;
@@ -167,7 +166,7 @@ public class MinerMoveToTown : State
         BehaviourActions behaviourActions = new BehaviourActions();
         minerTransform = parameters[0] as Transform;
         float deltaTime = (float)parameters[1];
-        //speed = (float)parameters[1];
+        bool wasAlarmed = (bool)parameters[2];
 
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
@@ -211,13 +210,13 @@ public class MinerMoveToTown : State
 
             if (currentPathIndex >= path.Count)
             {
-                // Ensure final graphPos coordinate reflects the path's last node
+             
                 if (startNode != null && path.Count > 0)
                 {
                     startNode.SetCoordinate(path[path.Count - 1].GetCoordinate());
                 }
-
-                OnFlag?.Invoke(Miner.Flags.OnTargetReach);
+                if(!wasAlarmed)
+                    OnFlag?.Invoke(Miner.Flags.OnTargetReach);
             }
         });
 
@@ -277,6 +276,18 @@ public class MinerDepositingState : State
 
 public class MinerMiningState : State
 {
+    public override BehaviourActions GetOnEnterBehaviours(params object[] parameters)
+    {        
+        GoldMine goldMine = parameters[0] as GoldMine;
+
+        BehaviourActions behaviourActions = new BehaviourActions();
+        behaviourActions.AddMultiThreadableBehaviour(0, () =>
+        {
+            goldMine.AddMiner();
+        });
+        return behaviourActions;
+    }
+
     public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
     {        
         GoldMine goldMine = parameters[0] as GoldMine;        
@@ -287,7 +298,8 @@ public class MinerMiningState : State
 
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMultiThreadableBehaviour(0, () =>
-        {           
+        {
+            
             if (inv.hunger >= 3)
             {               
                 if (goldMine != null && goldMine.RetrieveFood(1) > 0) { 
@@ -302,6 +314,7 @@ public class MinerMiningState : State
                 inv.inventory+= minedAmount;
                 inv.hunger++;                
             }
+
         });
 
         behaviourActions.SetTransitionBehaviour(() =>

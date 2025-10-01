@@ -44,7 +44,7 @@ public class GameManager : MonoBehaviour
         graph = new Vector2IntGraph<Node<Vector2Int>>(mapDimensions.x, mapDimensions.y);
         TH = new Townhall(new Vector2Int(0, 0));
         MM = new GoldMineManager();
-        MM.CreateMines(mines, 50, new Vector2Int(mapDimensions.x, mapDimensions.y));
+        MM.CreateMines(mines, 30, new Vector2Int(mapDimensions.x, mapDimensions.y));
 
         if (MM != null)
             MM.MineDepleted += OnMineDepleted;

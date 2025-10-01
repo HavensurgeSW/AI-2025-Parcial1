@@ -10,38 +10,41 @@ public class GoldMine
     public Vector2Int Position { get; }
     public event Action<GoldMine> OnDepleted;
 
-    public GoldMine() { 
+    private int activeMinerCount;
+    public bool HasActiveMiners => activeMinerCount > 0;
+    public event Action<GoldMine> OnActivated;
+    public event Action<GoldMine> OnDeactivatedByActivity;
+
+    public GoldMine() {
         maxGold = 10;
         currentGold = maxGold;
         foodStored = 2;
+        activeMinerCount = 0;
     }
     public GoldMine(int maxGold, Vector2Int position)
     {
         this.maxGold = maxGold;
         this.currentGold = maxGold;
         this.Position = position;
-        this.foodStored = 2;
+        this.foodStored = 5;
+        this.activeMinerCount = 0;
     }
     public int Mine(int amount)
     {
         int mined = Mathf.Min(amount, currentGold);
         currentGold -= mined;
-        
+
         if (currentGold <= 0)
-        {          
-            //Debug.Log($"Mine at {Position} is depleted.");
+        {
+            activeMinerCount = 0;
             OnDepleted?.Invoke(this);
         }
-
-        //Debug.Log($"Mined {mined} gold from mine at {Position}. Remaining gold: {currentGold}");
-
         return mined;
     }
     public int RetrieveFood(int amount)
     {
         int retrieved = Mathf.Min(amount, foodStored);
         foodStored -= retrieved;
-        Debug.Log("Food remaining: " + foodStored);
         return retrieved;
     }
     public void CallExist()
@@ -50,4 +53,24 @@ public class GoldMine
     }
 
     public bool isDepleted => currentGold <= 0;
+
+    public void AddMiner()
+    {
+        activeMinerCount++;
+        if (activeMinerCount == 1)
+        {
+            OnActivated?.Invoke(this);
+        }
+    }
+
+    public void RemoveMiner()
+    {
+        if (activeMinerCount <= 0) return;
+            activeMinerCount--;
+
+        if (activeMinerCount == 0)
+        {
+            OnDeactivatedByActivity?.Invoke(this);
+        }
+    }
 }

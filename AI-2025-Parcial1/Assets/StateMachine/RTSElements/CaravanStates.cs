@@ -26,7 +26,6 @@ public class CaravanMovingState : State
         GV = parameters[2] as GraphView;
         traveler.pathfinder = new AStarCaravan<Node<Vector2Int>>();
 
-
         // Try to resolve the actual node from the graph (same coordinate, real instance)
         Node<Vector2Int> graphNode = null;
         if (GV != null && GV.graph != null && GV.graph.nodes != null)
@@ -34,25 +33,43 @@ public class CaravanMovingState : State
             graphNode = GV.graph.nodes.Find(n => n.GetCoordinate().Equals(startNode.GetCoordinate()));
         }
 
-        if (graphNode != null)
+        bool foundActiveMine = false;
+
+        if (GV != null && GV.mineManager != null)
         {
-            if (traveler.TryGetNearestMine(graphNode, out Vector2Int mineCoord))
+            var nearest = GV.mineManager.FindNearestActive(startNode.GetCoordinate());
+            if (nearest != null)
             {
-                destination.SetCoordinate(mineCoord);
-            }
-        }
-        else
-        {
-            // If we couldn't find the graph node instance, try the simple fallback path
-            if (GV != null && GV.mineManager != null)
-            {
-                var nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
-                if (nearestMine != null)
-                    destination.SetCoordinate(nearestMine.Position);
+                destination.SetCoordinate(nearest.Position);
+                foundActiveMine = true;
             }
         }
 
-        path = traveler.FindPath(startNode, destination, GV);
+
+        if (!foundActiveMine && graphNode != null)
+        {
+            if (traveler.TryGetNearestMine(graphNode, out Vector2Int mineCoord))
+            {
+                var mine = GV?.mineManager?.GetMineAt(mineCoord);
+                if (mine != null && mine.HasActiveMiners)
+                {
+                    destination.SetCoordinate(mineCoord);
+                    foundActiveMine = true;
+                }
+            }
+        }
+
+        if (!foundActiveMine)
+        {
+            Debug.Log("CaravanMovingState: no active mine found -> will not start moving.");
+            path = new List<Node<Vector2Int>>();
+            currentPathIndex = 0;
+            BehaviourActions behaviourActionsNoMove = new BehaviourActions();
+            behaviourActionsNoMove.AddMainThreadableBehaviour(0, () => { });
+            return behaviourActionsNoMove;
+        }
+
+        path = traveler.FindPath(startNode, destination, GV) ?? new List<Node<Vector2Int>>();
         currentPathIndex = 0;
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMainThreadableBehaviour(0, () =>
@@ -104,8 +121,6 @@ public class CaravanMovingState : State
 
             if (currentPathIndex >= path.Count)
             {
-                // Ensure final graphPos coordinate reflects the path's last node
-                //El ultimo nodo del path es el 
                 if (startNode != null && path.Count > 0)
                 {
                     startNode.SetCoordinate(path[path.Count - 1].GetCoordinate());
@@ -131,15 +146,11 @@ public class CaravanDepositingState : State
         {
             goldMine.foodStored += inv.inventory;
             inv.inventory = 0;
-            Debug.Log($"Deposited {inv.inventory} food to the Mine. Total food: {goldMine.foodStored}");
         });
 
         behaviourActions.SetTransitionBehaviour(() =>
         {          
-            
-             Debug.Log("Transitioning from Depositing to MoveToTown");
-             OnFlag?.Invoke(Caravan.Flags.OnInventoryEmpty);
-            
+             OnFlag?.Invoke(Caravan.Flags.OnInventoryEmpty);            
         });
 
         return behaviourActions;
@@ -185,6 +196,7 @@ public class CaravanMovingToTownState : State
         BehaviourActions behaviourActions = new BehaviourActions();
         caravanTransform = parameters[0] as Transform;
         float deltaTime = (float)parameters[1];
+        bool wasAlarmed = (bool)parameters[2];
 
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {
@@ -227,8 +239,8 @@ public class CaravanMovingToTownState : State
                 {
                     startNode.SetCoordinate(path[path.Count - 1].GetCoordinate());
                 }
-
-                OnFlag?.Invoke(Miner.Flags.OnTargetReach);
+                if(!wasAlarmed)
+                    OnFlag?.Invoke(Miner.Flags.OnTargetReach);
             }
         });
 
@@ -276,7 +288,7 @@ public class CaravanIdleState : State
 
         behaviourActions.SetTransitionBehaviour(() =>
         {
-            OnFlag?.Invoke(Caravan.Flags.OnSpawned);
+            //OnFlag?.Invoke(Caravan.Flags.OnSpawned);
         });
 
         return behaviourActions;
