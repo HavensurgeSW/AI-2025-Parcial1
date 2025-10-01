@@ -30,23 +30,22 @@ public class MinerMovingState : State
         GV = parameters[2] as GraphView;
         traveler.pathfinder = new AStarPathfinder<Node<Vector2Int>>();
 
-        // Try to resolve the actual node from the graph (same coordinate, real instance)
         Node<Vector2Int> graphNode = null;
+
         if (GV != null && GV.graph != null && GV.graph.nodes != null)
         {
             graphNode = GV.graph.nodes.Find(n => n.GetCoordinate().Equals(startNode.GetCoordinate()));
         }
 
         if (graphNode != null)
-        {           
+        {
             if (traveler.TryGetNearestMine(graphNode, out Vector2Int mineCoord))
             {
                 destination.SetCoordinate(mineCoord);
-            }            
+            }
         }
         else
         {
-            // If we couldn't find the graph node instance, try the simple fallback path
             if (GV != null && GV.mineManager != null)
             {
                 var nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
@@ -56,10 +55,9 @@ public class MinerMovingState : State
         }
 
         path = traveler.FindPath(startNode, destination, GV);
-        // Normalize null -> empty list so tick logic can safely inspect path.Count
-        if (path == null) path = new List<Node<Vector2Int>>();
-
+        Debug.Log("Path lenght: " + path.Count);
         currentPathIndex = 0;
+
         BehaviourActions behaviourActions = new BehaviourActions();
         behaviourActions.AddMainThreadableBehaviour(0, () =>
         {

@@ -129,8 +129,8 @@ public class AStarPathfinder<NodeType> : Pathfinder<NodeType> where NodeType : I
 
         foreach (var n in graphNodes)
         {
-            gScore[n] = 0;
-            fScore[n] = 0;
+            gScore[n] = int.MaxValue;
+            fScore[n] = int.MaxValue;
         }
 
         gScore[start] = 0;
