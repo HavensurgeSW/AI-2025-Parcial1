@@ -31,6 +31,7 @@ namespace KarplusParcial1.Management
         [SerializeField] TMP_InputField mapY;
         [SerializeField] TMP_InputField mineAmount;
         [SerializeField] Slider tileSpacingSlider;
+        [SerializeField] TMP_Text scoreTracker;
 
         private volatile bool voronoiNeedsUpdate = false;
 
@@ -91,6 +92,7 @@ namespace KarplusParcial1.Management
                 if (GV != null)
                     GV.ColorWithVoronoi();
             }
+            scoreTracker.text = "Gold stored: " + TH.goldStored;
         }
 
         private void OnDestroy()
@@ -119,16 +121,24 @@ namespace KarplusParcial1.Management
 
         public void SpawnMiner()
         {
-            Instantiate(miner, new Vector3(0, 0, 0), Quaternion.identity);
-            miner.GetComponent<Miner>().GV = GV;
-            miner.GetComponent<Miner>().townhall = TH;
+            GameObject instance = Instantiate(miner, new Vector3(0, 0, 0), Quaternion.identity);
+            var m = instance.GetComponent<Miner>();
+            if (m != null)
+            {
+                m.GV = GV;
+                m.townhall = TH;
+            }
         }
 
         public void SpawnCaravan()
         {
-            Instantiate(caravan, new Vector3(0, 0, 0), Quaternion.identity);
-            caravan.GetComponent<Caravan>().GV = GV;
-            caravan.GetComponent<Caravan>().townhall = TH;
+            GameObject instance = Instantiate(caravan, new Vector3(0, 0, 0), Quaternion.identity);
+            var c = instance.GetComponent<Caravan>();
+            if (c != null)
+            {
+                c.GV = GV;
+                c.townhall = TH;
+            }
         }
 
 

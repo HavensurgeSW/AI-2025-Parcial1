@@ -298,6 +298,7 @@ namespace KarplusParcial1.FSM.States
             int miningRate = (int)parameters[1];
             InventoryData inv = parameters[2] as InventoryData;
             Miner miner = parameters[3] as Miner;
+            
 
 
             BehaviourActions behaviourActions = new BehaviourActions();
