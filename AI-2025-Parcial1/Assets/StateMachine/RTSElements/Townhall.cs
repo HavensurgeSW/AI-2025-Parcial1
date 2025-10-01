@@ -1,24 +1,26 @@
-
 using UnityEngine;
 
-public class Townhall 
+namespace KarplusParcial1.RTSElements
 {
-    public int goldStored = 0;
-
-    public Vector2Int Position { get; }
-
-    public Townhall(Vector2Int position)
+    public class Townhall
     {
-        Position = position;
-    }
+        public int goldStored = 0;
 
-    public Townhall() 
-    {
-       
+        public Vector2Int Position { get; }
+
+        public Townhall(Vector2Int position)
+        {
+            Position = position;
+        }
+
+        public Townhall()
+        {
+
+        }
+        public int Deposit(int amount)
+        {
+            goldStored += amount;
+            return amount;
+        }
     }
-    public int Deposit(int amount)
-    {
-        goldStored += amount;
-        return amount;
-    }
-}
+}   

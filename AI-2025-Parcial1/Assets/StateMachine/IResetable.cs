@@ -1,5 +1,8 @@
-public interface IResetable
+namespace KarplusParcial1.Graph.Core
 {
-    public void Reset();
+    public interface IResetable
+    {
+        public void Reset();
+    }
 }
     

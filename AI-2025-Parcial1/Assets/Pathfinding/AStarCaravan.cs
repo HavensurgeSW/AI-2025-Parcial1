@@ -1,335 +1,339 @@
 using System.Collections.Generic;
 using UnityEngine;
+using KarplusParcial1.Graph.Core;
 
-public class AStarCaravan<NodeType> : Pathfinder<NodeType> where NodeType : INode
+namespace KarplusParcial1.Pathfinding
 {
+    public class AStarCaravan<NodeType> : Pathfinder<NodeType> where NodeType : INode
+    {
 
-    private List<NodeType> graphNodes;
+        private List<NodeType> graphNodes;
 
-    private int gridMinX, gridMinY, gridWidth, gridHeight;
-    int roadCost = 1;
-    int nonRoadCost = 10;
+        private int gridMinX, gridMinY, gridWidth, gridHeight;
+        int roadCost = 1;
+        int nonRoadCost = 10;
 
-    protected override int Distance(NodeType A, NodeType B)
-    {        
-        if (A is INode<Vector2Int> a && B is INode<Vector2Int> b)
+        protected override int Distance(NodeType A, NodeType B)
         {
-            Vector2Int ca = a.GetCoordinate();
-            Vector2Int cb = b.GetCoordinate();
-
-            if (gridWidth > 0 && gridHeight > 0)
+            if (A is INode<Vector2Int> a && B is INode<Vector2Int> b)
             {
-                int dxRaw = Mathf.Abs(ca.x - cb.x);
-                int dyRaw = Mathf.Abs(ca.y - cb.y);
+                Vector2Int ca = a.GetCoordinate();
+                Vector2Int cb = b.GetCoordinate();
 
-                int dx = Mathf.Min(dxRaw, gridWidth - dxRaw);
-                int dy = Mathf.Min(dyRaw, gridHeight - dyRaw);
+                if (gridWidth > 0 && gridHeight > 0)
+                {
+                    int dxRaw = Mathf.Abs(ca.x - cb.x);
+                    int dyRaw = Mathf.Abs(ca.y - cb.y);
 
-                return dx + dy;
+                    int dx = Mathf.Min(dxRaw, gridWidth - dxRaw);
+                    int dy = Mathf.Min(dyRaw, gridHeight - dyRaw);
+
+                    return dx + dy;
+                }
+                return Mathf.Abs(ca.x - cb.x) + Mathf.Abs(ca.y - cb.y);
             }
-            return Mathf.Abs(ca.x - cb.x) + Mathf.Abs(ca.y - cb.y);
+
+            return 0;
         }
 
-        return 0;
-    }
-
-    protected override ICollection<NodeType> GetNeighbors(NodeType node)
-    {
-        var neighbors = new List<NodeType>();
-
-        if (node == null || graphNodes == null)
-            return neighbors;
-
-        // Only support Vector2Int coordinates here (4-connected grid).
-        if (node is INode<Vector2Int> nodeWithCoord)
+        protected override ICollection<NodeType> GetNeighbors(NodeType node)
         {
-            Vector2Int coord = nodeWithCoord.GetCoordinate();
+            var neighbors = new List<NodeType>();
 
-            // Four cardinal directions
-            Vector2Int[] deltas = new[]
+            if (node == null || graphNodes == null)
+                return neighbors;
+
+            // Only support Vector2Int coordinates here (4-connected grid).
+            if (node is INode<Vector2Int> nodeWithCoord)
             {
+                Vector2Int coord = nodeWithCoord.GetCoordinate();
+
+                // Four cardinal directions
+                Vector2Int[] deltas = new[]
+                {
                 new Vector2Int(1, 0),
                 new Vector2Int(-1, 0),
                 new Vector2Int(0, 1),
                 new Vector2Int(0, -1)
             };
 
-            foreach (var d in deltas)
-            {
-                Vector2Int neighborCoord = WrapCoordinate(new Vector2Int(coord.x + d.x, coord.y + d.y));
-                var neighborNode = FindNodeByCoordinate(neighborCoord);
-                if (neighborNode != null)
-                    neighbors.Add(neighborNode);
-            }
-        }
-
-        return neighbors;
-    }
-
-    protected override bool IsBlocked(NodeType node)
-    {
-        return node.IsBlocked();
-    }
-
-    protected override int MoveToNeighborCost(NodeType A, NodeType B)
-    {
-
-        if (A is INode<Vector2Int> a && B is INode<Vector2Int> b)
-        {
-            Vector2Int ca = a.GetCoordinate();
-            Vector2Int cb = b.GetCoordinate();
-
-            if (gridWidth > 0 && gridHeight > 0)
-            {
-                int dxRaw = Mathf.Abs(ca.x - cb.x);
-                int dyRaw = Mathf.Abs(ca.y - cb.y);
-                int dx = Mathf.Min(dxRaw, gridWidth - dxRaw);
-                int dy = Mathf.Min(dyRaw, gridHeight - dyRaw);
-
-                if (dx + dy == 1)
+                foreach (var d in deltas)
                 {
-                    bool aRoad = A.IsRoad();
-                    bool bRoad = B.IsRoad();
-                    return (aRoad || bRoad) ? roadCost : nonRoadCost;
-                }
-            }
-            else
-            {
-                int dx = Mathf.Abs(ca.x - cb.x);
-                int dy = Mathf.Abs(ca.y - cb.y);
-                if (dx + dy == 1)
-                {
-                    bool aRoad = A.IsRoad();
-                    bool bRoad = B.IsRoad();
-                    return (aRoad || bRoad) ? roadCost : nonRoadCost;
-                }
-            }
-        }
-        return nonRoadCost;
-    }
-
-    protected override bool NodesEquals(NodeType A, NodeType B)
-    {
-        if (ReferenceEquals(A, B))
-            return true;
-
-        if (A == null || B == null)
-            return false;
-
-        if (A is INode<Vector2Int> a && B is INode<Vector2Int> b)
-            return a.GetCoordinate() == b.GetCoordinate();
-
-        return EqualityComparer<NodeType>.Default.Equals(A, B);
-    }
-
-    public override List<NodeType> FindPath(NodeType startNode, NodeType destinationNode, ICollection<NodeType> graph)
-    {
-        if (graph == null || startNode == null || destinationNode == null)
-            return null;
-
-        // Build a mutable list of nodes (we may add start/destination if they are not present)
-        graphNodes = new List<NodeType>(graph);
-
-        // Resolve start/destination to nodes from the graph if possible (match by coordinate).
-        NodeType start = FindOrAddGraphNode(graphNodes, startNode);
-        NodeType goal = FindOrAddGraphNode(graphNodes, destinationNode);
-
-        // Recompute bounds now that graphNodes may have changed
-        ComputeGridBounds();
-
-        // Quick check: start == goal
-        if (NodesEquals(start, goal))
-        {
-            graphNodes = null;
-            return new List<NodeType> { start };
-        }
-
-        var openList = new List<NodeType>();
-        var closedList = new HashSet<NodeType>();
-
-        var gScore = new Dictionary<NodeType, int>();
-        var fScore = new Dictionary<NodeType, int>();
-        var parents = new Dictionary<NodeType, NodeType>();
-
-        // Initialize scores
-        foreach (var n in graphNodes)
-        {
-            gScore[n] = int.MaxValue;
-            fScore[n] = int.MaxValue;
-        }
-
-        gScore[start] = 0;
-        fScore[start] = Distance(start, goal);
-
-        openList.Add(start);
-
-        while (openList.Count > 0)
-        {
-            // pick node with lowest fScore
-            NodeType current = openList[0];
-            int currentIndex = 0;
-            for (int i = 1; i < openList.Count; i++)
-            {
-                var cand = openList[i];
-                int candF = fScore.ContainsKey(cand) ? fScore[cand] : int.MaxValue;
-                int curF = fScore.ContainsKey(current) ? fScore[current] : int.MaxValue;
-                if (candF < curF)
-                {
-                    current = cand;
-                    currentIndex = i;
+                    Vector2Int neighborCoord = WrapCoordinate(new Vector2Int(coord.x + d.x, coord.y + d.y));
+                    var neighborNode = FindNodeByCoordinate(neighborCoord);
+                    if (neighborNode != null)
+                        neighbors.Add(neighborNode);
                 }
             }
 
-            openList.RemoveAt(currentIndex);
-            closedList.Add(current);
+            return neighbors;
+        }
 
-            if (NodesEquals(current, goal))
+        protected override bool IsBlocked(NodeType node)
+        {
+            return node.IsBlocked();
+        }
+
+        protected override int MoveToNeighborCost(NodeType A, NodeType B)
+        {
+
+            if (A is INode<Vector2Int> a && B is INode<Vector2Int> b)
             {
-                var result = GeneratePath(start, goal, parents);
+                Vector2Int ca = a.GetCoordinate();
+                Vector2Int cb = b.GetCoordinate();
+
+                if (gridWidth > 0 && gridHeight > 0)
+                {
+                    int dxRaw = Mathf.Abs(ca.x - cb.x);
+                    int dyRaw = Mathf.Abs(ca.y - cb.y);
+                    int dx = Mathf.Min(dxRaw, gridWidth - dxRaw);
+                    int dy = Mathf.Min(dyRaw, gridHeight - dyRaw);
+
+                    if (dx + dy == 1)
+                    {
+                        bool aRoad = A.IsRoad();
+                        bool bRoad = B.IsRoad();
+                        return (aRoad || bRoad) ? roadCost : nonRoadCost;
+                    }
+                }
+                else
+                {
+                    int dx = Mathf.Abs(ca.x - cb.x);
+                    int dy = Mathf.Abs(ca.y - cb.y);
+                    if (dx + dy == 1)
+                    {
+                        bool aRoad = A.IsRoad();
+                        bool bRoad = B.IsRoad();
+                        return (aRoad || bRoad) ? roadCost : nonRoadCost;
+                    }
+                }
+            }
+            return nonRoadCost;
+        }
+
+        protected override bool NodesEquals(NodeType A, NodeType B)
+        {
+            if (ReferenceEquals(A, B))
+                return true;
+
+            if (A == null || B == null)
+                return false;
+
+            if (A is INode<Vector2Int> a && B is INode<Vector2Int> b)
+                return a.GetCoordinate() == b.GetCoordinate();
+
+            return EqualityComparer<NodeType>.Default.Equals(A, B);
+        }
+
+        public override List<NodeType> FindPath(NodeType startNode, NodeType destinationNode, ICollection<NodeType> graph)
+        {
+            if (graph == null || startNode == null || destinationNode == null)
+                return null;
+
+            // Build a mutable list of nodes (we may add start/destination if they are not present)
+            graphNodes = new List<NodeType>(graph);
+
+            // Resolve start/destination to nodes from the graph if possible (match by coordinate).
+            NodeType start = FindOrAddGraphNode(graphNodes, startNode);
+            NodeType goal = FindOrAddGraphNode(graphNodes, destinationNode);
+
+            // Recompute bounds now that graphNodes may have changed
+            ComputeGridBounds();
+
+            // Quick check: start == goal
+            if (NodesEquals(start, goal))
+            {
                 graphNodes = null;
-                return result;
+                return new List<NodeType> { start };
             }
 
-            foreach (var neighbor in GetNeighbors(current))
+            var openList = new List<NodeType>();
+            var closedList = new HashSet<NodeType>();
+
+            var gScore = new Dictionary<NodeType, int>();
+            var fScore = new Dictionary<NodeType, int>();
+            var parents = new Dictionary<NodeType, NodeType>();
+
+            // Initialize scores
+            foreach (var n in graphNodes)
             {
-                if (neighbor == null)
-                    continue;
+                gScore[n] = int.MaxValue;
+                fScore[n] = int.MaxValue;
+            }
 
-                if (!graphNodes.Contains(neighbor))
-                    continue;
+            gScore[start] = 0;
+            fScore[start] = Distance(start, goal);
 
-                if (IsBlocked(neighbor) || closedList.Contains(neighbor))
-                    continue;
+            openList.Add(start);
 
-                int currentG = gScore.ContainsKey(current) ? gScore[current] : int.MaxValue;
-                int stepCost = MoveToNeighborCost(current, neighbor);
-                int tentativeG = (currentG == int.MaxValue) ? int.MaxValue : currentG + stepCost;
-
-                if (!gScore.ContainsKey(neighbor) || tentativeG < gScore[neighbor])
+            while (openList.Count > 0)
+            {
+                // pick node with lowest fScore
+                NodeType current = openList[0];
+                int currentIndex = 0;
+                for (int i = 1; i < openList.Count; i++)
                 {
-                    parents[neighbor] = current;
-                    gScore[neighbor] = tentativeG;
-                    fScore[neighbor] = (tentativeG == int.MaxValue) ? int.MaxValue : tentativeG + Distance(neighbor, goal);
+                    var cand = openList[i];
+                    int candF = fScore.ContainsKey(cand) ? fScore[cand] : int.MaxValue;
+                    int curF = fScore.ContainsKey(current) ? fScore[current] : int.MaxValue;
+                    if (candF < curF)
+                    {
+                        current = cand;
+                        currentIndex = i;
+                    }
+                }
 
-                    if (!openList.Contains(neighbor))
-                        openList.Add(neighbor);
+                openList.RemoveAt(currentIndex);
+                closedList.Add(current);
+
+                if (NodesEquals(current, goal))
+                {
+                    var result = GeneratePath(start, goal, parents);
+                    graphNodes = null;
+                    return result;
+                }
+
+                foreach (var neighbor in GetNeighbors(current))
+                {
+                    if (neighbor == null)
+                        continue;
+
+                    if (!graphNodes.Contains(neighbor))
+                        continue;
+
+                    if (IsBlocked(neighbor) || closedList.Contains(neighbor))
+                        continue;
+
+                    int currentG = gScore.ContainsKey(current) ? gScore[current] : int.MaxValue;
+                    int stepCost = MoveToNeighborCost(current, neighbor);
+                    int tentativeG = (currentG == int.MaxValue) ? int.MaxValue : currentG + stepCost;
+
+                    if (!gScore.ContainsKey(neighbor) || tentativeG < gScore[neighbor])
+                    {
+                        parents[neighbor] = current;
+                        gScore[neighbor] = tentativeG;
+                        fScore[neighbor] = (tentativeG == int.MaxValue) ? int.MaxValue : tentativeG + Distance(neighbor, goal);
+
+                        if (!openList.Contains(neighbor))
+                            openList.Add(neighbor);
+                    }
                 }
             }
+
+            // No path found
+            graphNodes = null;
+            return null;
         }
 
-        // No path found
-        graphNodes = null;
-        return null;
-    }
-
-    private NodeType FindOrAddGraphNode(List<NodeType> nodes, NodeType probe)
-    {
-        if (probe == null)
-            return default;
-
-        // If node exposes Vector2Int coordinates, try to find a node in the graph with the same coords.
-        if (probe is INode<Vector2Int> probeWithCoord)
+        private NodeType FindOrAddGraphNode(List<NodeType> nodes, NodeType probe)
         {
-            Vector2Int coord = probeWithCoord.GetCoordinate();
+            if (probe == null)
+                return default;
+
+            // If node exposes Vector2Int coordinates, try to find a node in the graph with the same coords.
+            if (probe is INode<Vector2Int> probeWithCoord)
+            {
+                Vector2Int coord = probeWithCoord.GetCoordinate();
+                foreach (var n in nodes)
+                {
+                    if (n is INode<Vector2Int> nWithCoord && nWithCoord.GetCoordinate() == coord)
+                        return n;
+                }
+                nodes.Add(probe);
+                return probe;
+            }
+
+            // If not coordinate-based, prefer exact reference found in graph
             foreach (var n in nodes)
             {
-                if (n is INode<Vector2Int> nWithCoord && nWithCoord.GetCoordinate() == coord)
+                if (EqualityComparer<NodeType>.Default.Equals(n, probe))
                     return n;
             }
+
+            // Not present: add it
             nodes.Add(probe);
             return probe;
         }
 
-        // If not coordinate-based, prefer exact reference found in graph
-        foreach (var n in nodes)
+        private List<NodeType> GeneratePath(NodeType start, NodeType goal, Dictionary<NodeType, NodeType> parents)
         {
-            if (EqualityComparer<NodeType>.Default.Equals(n, probe))
-                return n;
-        }
+            var path = new List<NodeType>();
+            var current = goal;
 
-        // Not present: add it
-        nodes.Add(probe);
-        return probe;
-    }
-
-    private List<NodeType> GeneratePath(NodeType start, NodeType goal, Dictionary<NodeType, NodeType> parents)
-    {
-        var path = new List<NodeType>();
-        var current = goal;
-
-        while (current != null && !NodesEquals(current, start))
-        {
-            path.Add(current);
-            if (!parents.TryGetValue(current, out current))
+            while (current != null && !NodesEquals(current, start))
             {
-                // parent missing -> cannot reconstruct full path
-                return null;
+                path.Add(current);
+                if (!parents.TryGetValue(current, out current))
+                {
+                    // parent missing -> cannot reconstruct full path
+                    return null;
+                }
             }
+
+            if (current != null)
+                path.Add(current);
+
+            path.Reverse();
+            return path;
         }
 
-        if (current != null)
-            path.Add(current);
-
-        path.Reverse();
-        return path;
-    }
-
-    private void ComputeGridBounds()
-    {
-        int minX = int.MaxValue, maxX = int.MinValue, minY = int.MaxValue, maxY = int.MinValue;
-        bool found = false;
-
-        foreach (var n in graphNodes)
+        private void ComputeGridBounds()
         {
-            if (n is INode<Vector2Int> withCoord)
+            int minX = int.MaxValue, maxX = int.MinValue, minY = int.MaxValue, maxY = int.MinValue;
+            bool found = false;
+
+            foreach (var n in graphNodes)
             {
-                Vector2Int c = withCoord.GetCoordinate();
-                if (c.x < minX) minX = c.x;
-                if (c.x > maxX) maxX = c.x;
-                if (c.y < minY) minY = c.y;
-                if (c.y > maxY) maxY = c.y;
-                found = true;
+                if (n is INode<Vector2Int> withCoord)
+                {
+                    Vector2Int c = withCoord.GetCoordinate();
+                    if (c.x < minX) minX = c.x;
+                    if (c.x > maxX) maxX = c.x;
+                    if (c.y < minY) minY = c.y;
+                    if (c.y > maxY) maxY = c.y;
+                    found = true;
+                }
             }
+
+            if (!found)
+            {
+                gridMinX = gridMinY = gridWidth = gridHeight = 0;
+                return;
+            }
+
+            gridMinX = minX;
+            gridMinY = minY;
+            gridWidth = maxX - minX + 1;
+            gridHeight = maxY - minY + 1;
+
+            if (gridWidth < 0) gridWidth = 0;
+            if (gridHeight < 0) gridHeight = 0;
         }
 
-        if (!found)
+        private Vector2Int WrapCoordinate(Vector2Int input)
         {
-            gridMinX = gridMinY = gridWidth = gridHeight = 0;
-            return;
+            if (gridWidth <= 0 || gridHeight <= 0)
+                return input;
+
+            int wrappedX = (input.x - gridMinX) % gridWidth;
+            if (wrappedX < 0) wrappedX += gridWidth;
+            wrappedX += gridMinX;
+
+            int wrappedY = (input.y - gridMinY) % gridHeight;
+            if (wrappedY < 0) wrappedY += gridHeight;
+            wrappedY += gridMinY;
+
+            return new Vector2Int(wrappedX, wrappedY);
         }
 
-        gridMinX = minX;
-        gridMinY = minY;
-        gridWidth = maxX - minX + 1;
-        gridHeight = maxY - minY + 1;
-
-        if (gridWidth < 0) gridWidth = 0;
-        if (gridHeight < 0) gridHeight = 0;
-    }
-
-    private Vector2Int WrapCoordinate(Vector2Int input)
-    {
-        if (gridWidth <= 0 || gridHeight <= 0)
-            return input;
-
-        int wrappedX = (input.x - gridMinX) % gridWidth;
-        if (wrappedX < 0) wrappedX += gridWidth;
-        wrappedX += gridMinX;
-
-        int wrappedY = (input.y - gridMinY) % gridHeight;
-        if (wrappedY < 0) wrappedY += gridHeight;
-        wrappedY += gridMinY;
-
-        return new Vector2Int(wrappedX, wrappedY);
-    }
-
-    private NodeType FindNodeByCoordinate(Vector2Int coord)
-    {
-        foreach (var n in graphNodes)
+        private NodeType FindNodeByCoordinate(Vector2Int coord)
         {
-            if (n is INode<Vector2Int> withCoord && withCoord.GetCoordinate() == coord)
-                return n;
+            foreach (var n in graphNodes)
+            {
+                if (n is INode<Vector2Int> withCoord && withCoord.GetCoordinate() == coord)
+                    return n;
+            }
+            return default;
         }
-        return default;
     }
 }

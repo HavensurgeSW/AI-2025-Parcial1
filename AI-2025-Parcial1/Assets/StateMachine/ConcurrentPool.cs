@@ -1,33 +1,37 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using KarplusParcial1.Graph.Core;
 
-public class ConcurrentPool
+namespace KarplusParcial1.FSM.Core
 {
-    private static readonly ConcurrentDictionary<Type, ConcurrentStack<IResetable>> concurrentPool =
-        new ConcurrentDictionary<Type, ConcurrentStack<IResetable>>();
-
-    public static TResetable Get<TResetable>() where TResetable : IResetable, new()
+    public class ConcurrentPool
     {
-        if (!concurrentPool.ContainsKey(typeof(TResetable)))
-            concurrentPool.TryAdd(typeof(TResetable), new ConcurrentStack<IResetable>());
+        private static readonly ConcurrentDictionary<Type, ConcurrentStack<IResetable>> concurrentPool =
+            new ConcurrentDictionary<Type, ConcurrentStack<IResetable>>();
 
-        TResetable value;
-        if (concurrentPool[typeof(TResetable)].Count > 0)
+        public static TResetable Get<TResetable>() where TResetable : IResetable, new()
         {
-            concurrentPool[typeof(TResetable)].TryPop(out IResetable resetable);
-            value = (TResetable)resetable;
-        }
-        else
-        {
-            value = new TResetable();
-        }
-        return value;
-    }
+            if (!concurrentPool.ContainsKey(typeof(TResetable)))
+                concurrentPool.TryAdd(typeof(TResetable), new ConcurrentStack<IResetable>());
 
-    public static void Release<TResetable>(TResetable obj) where TResetable : IResetable, new()
-    {
-        obj.Reset();
-        concurrentPool[typeof(TResetable)].Push(obj);
+            TResetable value;
+            if (concurrentPool[typeof(TResetable)].Count > 0)
+            {
+                concurrentPool[typeof(TResetable)].TryPop(out IResetable resetable);
+                value = (TResetable)resetable;
+            }
+            else
+            {
+                value = new TResetable();
+            }
+            return value;
+        }
+
+        public static void Release<TResetable>(TResetable obj) where TResetable : IResetable, new()
+        {
+            obj.Reset();
+            concurrentPool[typeof(TResetable)].Push(obj);
+        }
     }
 }
 
