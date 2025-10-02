@@ -110,7 +110,7 @@ namespace KarplusParcial1.Graph
                 return;
             }
 
-            // Collect non-depleted mine sites
+
             var sites = new List<Vector2Int>();
             foreach (var m in mineManager.Mines)
             {
@@ -126,46 +126,38 @@ namespace KarplusParcial1.Graph
                 return;
             }
 
-            // Simple brute-force nearest assignment performed here (keeps Voronoi class focused on bisector visualization).
-            nearestMineLookup.Clear();
+            nearestMineLookup = Voronoi.ComputeNearestLookupByClipping(graph, sites, mapSize, wrapWorld);
 
             int width = Math.Max(1, mapSize.x);
             int height = Math.Max(1, mapSize.y);
+            var blocked = new HashSet<Vector2Int>(graph.nodes.Count);
+            foreach (var n in graph.nodes) if (n.IsBlocked()) blocked.Add(n.GetCoordinate());
 
-            // Build blocked map for quick checks
-            var coordToBlocked = new Dictionary<Vector2Int, bool>(graph.nodes.Count);
-            foreach (var n in graph.nodes) coordToBlocked[n.GetCoordinate()] = n.IsBlocked();
-
-            for (int y = 0; y < height; y++)
+            foreach (var node in graph.nodes)
             {
-                for (int x = 0; x < width; x++)
+                var coord = node.GetCoordinate();
+                if (blocked.Contains(coord)) continue;
+                if (nearestMineLookup.ContainsKey(coord)) continue;
+
+                long bestDistSq = long.MaxValue;
+                Vector2Int bestSite = new Vector2Int(-1, -1);
+                for (int i = 0; i < sites.Count; i++)
                 {
-                    var coord = new Vector2Int(x, y);
-                    if (coordToBlocked.TryGetValue(coord, out bool blocked) && blocked)
-                        continue;
-
-                    long bestDistSq = long.MaxValue;
-                    Vector2Int bestSite = new Vector2Int(-1, -1);
-
-                    for (int i = 0; i < sites.Count; i++)
+                    var s = sites[i];
+                    int dx = WrappedDelta(coord.x, s.x, width, wrapWorld);
+                    int dy = WrappedDelta(coord.y, s.y, height, wrapWorld);
+                    long distSq = (long)dx * dx + (long)dy * dy;
+                    if (distSq < bestDistSq)
                     {
-                        var s = sites[i];
-                        int dx = WrappedDelta(x, s.x, width, wrapWorld);
-                        int dy = WrappedDelta(y, s.y, height, wrapWorld);
-                        long distSq = (long)dx * dx + (long)dy * dy;
-                        if (distSq < bestDistSq)
-                        {
-                            bestDistSq = distSq;
-                            bestSite = s;
-                        }
+                        bestDistSq = distSq;
+                        bestSite = s;
                     }
-
-                    if (bestSite.x != -1)
-                        nearestMineLookup[coord] = bestSite;
                 }
+
+                if (bestSite.x != -1)
+                    nearestMineLookup[coord] = bestSite;
             }
 
-            // IMPORTANT: update Node objects so other systems that query nodes get the same nearest mine
             foreach (var node in graph.nodes)
             {
                 var coord = node.GetCoordinate();
@@ -179,7 +171,7 @@ namespace KarplusParcial1.Graph
                 }
             }
 
-            // Generate deterministic colors per mine
+
             var mineColors = new Dictionary<Vector2Int, Color>();
             foreach (var s in sites)
             {
@@ -189,7 +181,6 @@ namespace KarplusParcial1.Graph
                 mineColors[s] = Color.HSVToRGB(hue, 0.6f, 0.95f);
             }
 
-            // Paint tiles using cached SpriteRenderers
             foreach (var node in graph.nodes)
             {
                 Vector2Int coord = node.GetCoordinate();
@@ -203,28 +194,25 @@ namespace KarplusParcial1.Graph
                 }
                 if (sr == null) continue;
 
-                // Mines override color
+
                 if (mineManager.GetMineAt(coord) != null)
                 {
                     sr.color = Color.yellow;
                     continue;
                 }
 
-                // Blocked tiles are red
                 if (node.IsBlocked())
                 {
                     sr.color = Color.red;
                     continue;
                 }
 
-                // Use lookup color if available
                 if (nearestMineLookup.TryGetValue(coord, out Vector2Int ownerPos) && mineColors.TryGetValue(ownerPos, out Color c))
                 {
                     sr.color = c;
                     continue;
                 }
 
-                // Fallback
                 sr.color = Color.green;
             }
         }

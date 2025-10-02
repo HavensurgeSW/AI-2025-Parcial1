@@ -14,7 +14,6 @@ namespace KarplusParcial1.Graph.VoronoiAlgorithm
             public LineSegment(Vector2 a, Vector2 b) { this.a = a; this.b = b; }
         }
          
-
         public static Dictionary<Vector2Int, Vector2Int> ComputeNearestLookupBruteForce(
             Vector2IntGraph<Node<Vector2Int>> graph,
             IList<Vector2Int> sites,
@@ -62,6 +61,180 @@ namespace KarplusParcial1.Graph.VoronoiAlgorithm
 
             return result;
         }
+
+        public static Dictionary<Vector2Int, Vector2Int> ComputeNearestLookupByClipping(
+            Vector2IntGraph<Node<Vector2Int>> graph,
+            IList<Vector2Int> sites,
+            Vector2Int mapSize,
+            bool wrapWorld)
+        {
+            var result = new Dictionary<Vector2Int, Vector2Int>();
+            if (graph == null || graph.nodes == null || sites == null || sites.Count == 0)
+                return result;
+
+            int width = Math.Max(1, mapSize.x);
+            int height = Math.Max(1, mapSize.y);
+
+            var blocked = new HashSet<Vector2Int>(graph.nodes.Count);
+            foreach (var n in graph.nodes) if (n.IsBlocked()) blocked.Add(n.GetCoordinate());
+
+            // Initial clipping rectangle (covering whole map)
+            List<Vector2> initialRect = new List<Vector2>(4)
+            {
+                new Vector2(0f, 0f),
+                new Vector2(width, 0f),
+                new Vector2(width, height),
+                new Vector2(0f, height)
+            };
+
+            const float EPS = 1e-6f;
+
+            for (int i = 0; i < sites.Count; i++)
+            {
+                var s = sites[i];
+                Vector2 a = new Vector2(s.x, s.y);
+
+                List<Vector2> poly = new List<Vector2>(initialRect);
+
+                for (int j = 0; j < sites.Count; j++)
+                {
+                    if (j == i) continue;
+                    Vector2 bOrig = new Vector2(sites[j].x, sites[j].y);
+
+                    if (wrapWorld)
+                    {
+                        for (int ox = -1; ox <= 1; ox++)
+                        {
+                            for (int oy = -1; oy <= 1; oy++)
+                            {
+                                Vector2 b = bOrig + new Vector2(ox * width, oy * height);
+                                ClipPolygonWithBisector(ref poly, a, b, EPS);
+                                if (poly.Count == 0) break;
+                            }
+                            if (poly.Count == 0) break;
+                        }
+                    }
+                    else
+                    {
+                        ClipPolygonWithBisector(ref poly, a, bOrig, EPS);
+                    }
+
+                    if (poly.Count == 0) break;
+                }
+
+                if (poly.Count == 0) continue;
+
+                float minX = float.MaxValue, maxX = float.MinValue, minY = float.MaxValue, maxY = float.MinValue;
+                foreach (var p in poly)
+                {
+                    if (p.x < minX) minX = p.x;
+                    if (p.x > maxX) maxX = p.x;
+                    if (p.y < minY) minY = p.y;
+                    if (p.y > maxY) maxY = p.y;
+                }
+
+                int ix0 = Mathf.Clamp((int)Mathf.Floor(minX), 0, width - 1);
+                int ix1 = Mathf.Clamp((int)Mathf.Ceil(maxX), 0, width - 1);
+                int iy0 = Mathf.Clamp((int)Mathf.Floor(minY), 0, height - 1);
+                int iy1 = Mathf.Clamp((int)Mathf.Ceil(maxY), 0, height - 1);
+
+                for (int y = iy0; y <= iy1; y++)
+                {
+                    for (int x = ix0; x <= ix1; x++)
+                    {
+                        var coord = new Vector2Int(x, y);
+                        if (blocked.Contains(coord)) continue;
+                        Vector2 pt = new Vector2(x, y);
+                        if (IsPointInConvexPolygon(pt, poly, EPS))
+                        {                           
+                            result[coord] = s;
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+      
+        private static void ClipPolygonWithBisector(ref List<Vector2> poly, Vector2 a, Vector2 b, float eps)
+        {
+            if (poly == null || poly.Count == 0) return;
+
+            Vector2 n = b - a; 
+            float d = (Vector2.Dot(b, b) - Vector2.Dot(a, a)) * 0.5f;
+
+            List<Vector2> output = new List<Vector2>(poly.Count);
+            int count = poly.Count;
+            for (int i = 0; i < count; i++)
+            {
+                Vector2 curr = poly[i];
+                Vector2 next = poly[(i + 1) % count];
+
+                bool currInside = Vector2.Dot(curr, n) <= d + eps;
+                bool nextInside = Vector2.Dot(next, n) <= d + eps;
+
+                if (currInside && nextInside)
+                {
+                  
+                    output.Add(next);
+                }
+                else if (currInside && !nextInside)
+                {
+                   
+                    if (TryIntersectSegmentWithLine(curr, next, n, d, out Vector2 inter))
+                    {
+                        output.Add(inter);
+                    }
+                }
+                else if (!currInside && nextInside)
+                {
+                    
+                    if (TryIntersectSegmentWithLine(curr, next, n, d, out Vector2 inter))
+                    {
+                        output.Add(inter);
+                    }
+                    output.Add(next);
+                }
+            }
+
+            poly = output;
+        }
+
+
+        private static bool TryIntersectSegmentWithLine(Vector2 p0, Vector2 p1, Vector2 n, float d, out Vector2 intersection)
+        {
+            Vector2 dir = p1 - p0;
+            float denom = Vector2.Dot(dir, n);
+            if (Mathf.Abs(denom) < 1e-9f)
+            {
+                intersection = Vector2.zero;
+                return false;
+            }
+            float t = (d - Vector2.Dot(p0, n)) / denom;
+            intersection = p0 + dir * t;
+            return true;
+        }
+
+        private static bool IsPointInConvexPolygon(Vector2 p, List<Vector2> poly, float eps)
+        {
+            int n = poly.Count;
+            if (n == 0) return false;
+            float sign = 0f;
+            for (int i = 0; i < n; i++)
+            {
+                Vector2 a = poly[i];
+                Vector2 b = poly[(i + 1) % n];
+                Vector2 edge = b - a;
+                Vector2 vp = p - a;
+                float cross = edge.x * vp.y - edge.y * vp.x;
+                if (Mathf.Abs(cross) <= eps) continue;
+                if (sign == 0f) sign = Mathf.Sign(cross);
+                else if (Mathf.Sign(cross) != sign) return false;
+            }
+            return true;
+        }
+
         public static List<LineSegment> GetBisectorSegments(
             IList<Vector2Int> sites,
             Vector2Int mapSize,
