@@ -66,7 +66,7 @@ namespace KarplusParcial1.Management
             //GV.ColorWithTerrain();
             GV.ColorWithVoronoi();
             RoadBuilder.BuildRoads(GV, new Vector2Int(0, 0));
-            //GV.OverlayRoads();
+            GV.OverlayRoads();
             GV.ColorMines();
 
 
