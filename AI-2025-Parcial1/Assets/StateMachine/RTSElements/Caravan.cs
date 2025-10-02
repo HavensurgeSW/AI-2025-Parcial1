@@ -113,14 +113,12 @@ namespace KarplusParcial1.RTSElements
                 GV = FindFirstObjectByType<GraphView>();
                 if (GV == null)
                 {
-                    Debug.LogWarning("SetTargetToClosestMine: GraphView is null. Can't find nearest mine.");
+                   
                     return;
                 }
             }
-
             if (GV.mineManager == null)
-            {
-                Debug.LogWarning("SetTargetToClosestMine: mineManager is null. Can't find nearest mine.");
+            {       
                 return;
             }
 

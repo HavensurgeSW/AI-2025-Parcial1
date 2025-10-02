@@ -66,16 +66,8 @@ namespace KarplusParcial1.Management
             //GV.ColorWithTerrain();
             GV.ColorWithVoronoi();
             RoadBuilder.BuildRoads(GV, new Vector2Int(0, 0));
-            GV.OverlayRoads();
+            //GV.OverlayRoads();
             GV.ColorMines();
-
-
-            //Voronoi.SpawnBisectorBetweenMines(transform, MM, 0, 1, GV.TileSpacing, mapDimensions);
-            //Voronoi.SpawnBisectorBetweenMines(transform, MM, 1, 2, GV.TileSpacing, mapDimensions);
-            //Voronoi.SpawnBisectorBetweenMines(transform, MM, 0, 2, GV.TileSpacing, mapDimensions);
-            //Voronoi.SpawnBisectorBetweenMines(transform, MM, 0, 3, GV.TileSpacing, mapDimensions);
-            //Voronoi.SpawnBisectorBetweenMines(transform, MM, 1, 3, GV.TileSpacing, mapDimensions);
-            //Voronoi.SpawnBisectorBetweenMines(transform, MM, 2, 3, GV.TileSpacing, mapDimensions);
 
 
             AdjustCameraToGrid();
