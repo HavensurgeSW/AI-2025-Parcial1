@@ -78,7 +78,6 @@ namespace KarplusParcial1.Graph.VoronoiAlgorithm
             var blocked = new HashSet<Vector2Int>(graph.nodes.Count);
             foreach (var n in graph.nodes) if (n.IsBlocked()) blocked.Add(n.GetCoordinate());
 
-            // Initial clipping rectangle (covering whole map)
             List<Vector2> initialRect = new List<Vector2>(4)
             {
                 new Vector2(0f, 0f),
@@ -161,8 +160,9 @@ namespace KarplusParcial1.Graph.VoronoiAlgorithm
         {
             if (poly == null || poly.Count == 0) return;
 
-            Vector2 n = b - a; 
-            float d = (Vector2.Dot(b, b) - Vector2.Dot(a, a)) * 0.5f;
+            Vector2 n = b - a;
+            //float d = (Vector2.Dot(b, b) - Vector2.Dot(a, a)) * 0.5f;
+            float d = 0;
 
             List<Vector2> output = new List<Vector2>(poly.Count);
             int count = poly.Count;

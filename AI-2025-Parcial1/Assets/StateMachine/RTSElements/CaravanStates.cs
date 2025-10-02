@@ -27,62 +27,59 @@ namespace KarplusParcial1.FSM.States
 
         public override BehaviourActions GetOnEnterBehaviours(params object[] parameters)
         {
-            Debug.Log("Entering CaravanMovingState");
             startNode = parameters[0] as Node<Vector2Int>;
             destination = parameters[1] as Node<Vector2Int>;
             GV = parameters[2] as GraphView;
             traveler.pathfinder = new AStarCaravan<Node<Vector2Int>>();
+            Debug.Log("Entering CaravanMovingState");
 
-            Node<Vector2Int> graphNode = null;
-            if (GV != null && GV.graph != null && GV.graph.nodes != null)
-            {
-                graphNode = GV.graph.nodes.Find(n => n.GetCoordinate().Equals(startNode.GetCoordinate()));
-            }
-
-            bool foundActiveMine = false;
-
-            if (GV != null && GV.mineManager != null)
-            {
-                var nearest = GV.mineManager.FindNearestActive(startNode.GetCoordinate());
-                if (nearest != null)
-                {
-                    destination.SetCoordinate(nearest.Position);
-                    foundActiveMine = true;
-                }
-            }
-
-
-            if (!foundActiveMine && graphNode != null)
-            {
-                if (traveler.TryGetNearestMine(graphNode, out Vector2Int mineCoord))
-                {
-                    var mine = GV?.mineManager?.GetMineAt(mineCoord);
-                    if (mine != null && mine.HasActiveMiners)
-                    {
-                        destination.SetCoordinate(mineCoord);
-                        foundActiveMine = true;
-                    }
-                }
-            }
-
-            if (!foundActiveMine)
-            {
-                Debug.Log("CaravanMovingState: no active mine found -> will not start moving.");
-                path = new List<Node<Vector2Int>>();
-                currentPathIndex = 0;
-                snapTimer = 0f;
-                BehaviourActions behaviourActionsNoMove = new BehaviourActions();
-                behaviourActionsNoMove.AddMainThreadableBehaviour(0, () => { });
-                return behaviourActionsNoMove;
-            }
-
-            path = traveler.FindPath(startNode, destination, GV) ?? new List<Node<Vector2Int>>();
-            currentPathIndex = 0;
-            snapTimer = 0f;
             BehaviourActions behaviourActions = new BehaviourActions();
             behaviourActions.AddMainThreadableBehaviour(0, () =>
             {
 
+                Node<Vector2Int> graphNode = null;
+                if (GV != null && GV.graph != null && GV.graph.nodes != null)
+                {
+                    graphNode = GV.graph.nodes.Find(n => n.GetCoordinate().Equals(startNode.GetCoordinate()));
+                }
+
+                bool foundActiveMine = false;
+
+                if (GV != null && GV.mineManager != null)
+                {
+                    var nearest = GV.mineManager.FindNearestActive(startNode.GetCoordinate());
+                    if (nearest != null)
+                    {
+                        destination.SetCoordinate(nearest.Position);
+                        foundActiveMine = true;
+                    }
+                }
+
+                if (!foundActiveMine && graphNode != null)
+                {
+                    if (traveler.TryGetNearestMine(graphNode, out Vector2Int mineCoord))
+                    {
+                        var mine = GV?.mineManager?.GetMineAt(mineCoord);
+                        if (mine != null && mine.HasActiveMiners)
+                        {
+                            destination.SetCoordinate(mineCoord);
+                            foundActiveMine = true;
+                        }
+                    }
+                }
+
+                if (!foundActiveMine)
+                {
+                    Debug.Log("CaravanMovingState: no active mine found -> will not start moving.");
+                    path = new List<Node<Vector2Int>>();
+                    currentPathIndex = 0;
+                    snapTimer = 0f;
+                    return;
+                }
+
+                path = traveler.FindPath(startNode, destination, GV) ?? new List<Node<Vector2Int>>();
+                currentPathIndex = 0;
+                snapTimer = 0f;
             });
             return behaviourActions;
         }
@@ -206,12 +203,14 @@ namespace KarplusParcial1.FSM.States
             GV = parameters[2] as GraphView;
             traveler.pathfinder = new AStarCaravan<Node<Vector2Int>>();
 
-            path = traveler.FindPath(startNode, destination, GV) ?? new List<Node<Vector2Int>>();
-
-            currentPathIndex = 0;
-            snapTimer = 0f;
             BehaviourActions behaviourActions = new BehaviourActions();
-            behaviourActions.AddMainThreadableBehaviour(0, () => { });
+            behaviourActions.AddMainThreadableBehaviour(0, () => {
+
+                path = traveler.FindPath(startNode, destination, GV) ?? new List<Node<Vector2Int>>();
+
+                currentPathIndex = 0;
+                snapTimer = 0f;
+            });
             return behaviourActions;
         }
 

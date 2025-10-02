@@ -19,9 +19,9 @@ namespace KarplusParcial1.RTSElements
 
         public GoldMine()
         {
-            maxGold = 10;
+            maxGold = 30;
             currentGold = maxGold;
-            foodStored = 5;
+            foodStored = 500;
             activeMinerCount = 0;
         }
         public GoldMine(int maxGold, Vector2Int position)
@@ -29,7 +29,7 @@ namespace KarplusParcial1.RTSElements
             this.maxGold = maxGold;
             this.currentGold = maxGold;
             this.Position = position;
-            this.foodStored = 5;
+            this.foodStored = 500;
             this.activeMinerCount = 0;
         }
         public int Mine(int amount)
@@ -60,7 +60,7 @@ namespace KarplusParcial1.RTSElements
         public void AddMiner()
         {
             activeMinerCount++;
-            if (activeMinerCount == 1)
+            if (activeMinerCount >= 1)
             {
                 OnActivated?.Invoke(this);
             }

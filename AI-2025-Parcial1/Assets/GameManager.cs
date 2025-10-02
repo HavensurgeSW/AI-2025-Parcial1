@@ -82,7 +82,11 @@ namespace KarplusParcial1.Management
             {
                 voronoiNeedsUpdate = false;
                 if (GV != null)
+                {
                     GV.ColorWithVoronoi();
+                    GV.OverlayRoads();
+                    GV.ColorMines();
+                }
             }
             scoreTracker.text = "Gold stored: " + TH.goldStored;
         }

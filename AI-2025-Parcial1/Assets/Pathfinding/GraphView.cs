@@ -4,7 +4,6 @@ using UnityEngine;
 using KarplusParcial1.Management;
 using KarplusParcial1.Graph.Core;
 using KarplusParcial1.Graph.VoronoiAlgorithm;
-using KarplusParcial1.Pathfinding;
 
 namespace KarplusParcial1.Graph
 {

@@ -1,5 +1,3 @@
-using System;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 using KarplusParcial1.Graph.Core;
 using KarplusParcial1.Graph;
@@ -48,7 +46,7 @@ namespace KarplusParcial1.RTSElements
 
         public void Start()
         {
-            var homePos = townhall != null ? townhall.Position : new Vector2Int(0, 0);
+            Vector2Int homePos = townhall != null ? townhall.Position : new Vector2Int(0, 0);
             home.SetCoordinate(homePos);
 
             graphPos.SetCoordinate(new Vector2Int(0, 0));

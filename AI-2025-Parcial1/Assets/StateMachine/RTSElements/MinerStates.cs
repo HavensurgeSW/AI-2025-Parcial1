@@ -32,39 +32,39 @@ namespace KarplusParcial1.FSM.States
             GV = parameters[2] as GraphView;
             traveler.pathfinder = new AStarPathfinder<Node<Vector2Int>>();
 
-            Node<Vector2Int> graphNode = null;
-
-            if (GV != null && GV.graph != null && GV.graph.nodes != null)
-            {
-                graphNode = GV.graph.nodes.Find(n => n.GetCoordinate().Equals(startNode.GetCoordinate()));
-            }
-
-            if (graphNode != null)
-            {
-                if (traveler.TryGetNearestMine(graphNode, out Vector2Int mineCoord))
-                {
-                    destination.SetCoordinate(mineCoord);
-                }
-            }
-            else
-            {
-                if (GV != null && GV.mineManager != null)
-                {
-                    var nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
-                    if (nearestMine != null)
-                        destination.SetCoordinate(nearestMine.Position);
-                }
-            }
-
-            path = traveler.FindPath(startNode, destination, GV);
-            if (path == null) path = new List<Node<Vector2Int>>();
-            currentPathIndex = 0;
-            snapTimer = 0f;
+            
 
             BehaviourActions behaviourActions = new BehaviourActions();
             behaviourActions.AddMainThreadableBehaviour(0, () =>
             {
+                Node<Vector2Int> graphNode = null;
 
+                if (GV != null && GV.graph != null && GV.graph.nodes != null)
+                {
+                    graphNode = GV.graph.nodes.Find(n => n.GetCoordinate().Equals(startNode.GetCoordinate()));
+                }
+
+                if (graphNode != null)
+                {
+                    if (traveler.TryGetNearestMine(graphNode, out Vector2Int mineCoord))
+                    {
+                        destination.SetCoordinate(mineCoord);
+                    }
+                }
+                else
+                {
+                    if (GV != null && GV.mineManager != null)
+                    {
+                        var nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
+                        if (nearestMine != null)
+                            destination.SetCoordinate(nearestMine.Position);
+                    }
+                }
+
+                path = traveler.FindPath(startNode, destination, GV);
+                if (path == null) path = new List<Node<Vector2Int>>();
+                currentPathIndex = 0;
+                snapTimer = 0f;
             });
             return behaviourActions;
         }
@@ -141,7 +141,8 @@ namespace KarplusParcial1.FSM.States
         }
     }
 
-    public class MinerMoveToTown : State
+    public class MinerMoveToTown
+        : State
     {
         //Pathfinding 
         private GraphView GV;
@@ -163,15 +164,15 @@ namespace KarplusParcial1.FSM.States
             destination = parameters[1] as Node<Vector2Int>;
             GV = parameters[2] as GraphView;
 
-            path = traveler.FindPath(startNode, destination, GV);
-            //si el path devuelve null, inicio la variable para que no explote todo
-            if (path == null) path = new List<Node<Vector2Int>>();
 
             currentPathIndex = 0;
             snapTimer = 0f;
             BehaviourActions behaviourActions = new BehaviourActions();
             behaviourActions.AddMainThreadableBehaviour(0, () =>
             {
+                path = traveler.FindPath(startNode, destination, GV);
+                //si el path devuelve null, inicio la variable para que no explote todo
+                if (path == null) path = new List<Node<Vector2Int>>();
 
             });
             return behaviourActions;
@@ -254,12 +255,11 @@ namespace KarplusParcial1.FSM.States
 
 
     }
-    public class MinerDepositingState : State
+    public class MinerDepositingState 
+        : State
     {
         public override BehaviourActions GetOnEnterBehaviours(params object[] parameters)
         {
-
-
             BehaviourActions behaviourActions = new BehaviourActions();
             return behaviourActions;
         }
@@ -323,14 +323,15 @@ namespace KarplusParcial1.FSM.States
             int miningRate = (int)parameters[1];
             InventoryData inv = parameters[2] as InventoryData;
             Miner miner = parameters[3] as Miner;
-            
+
+            int exhaustionLimit = 3;
 
 
             BehaviourActions behaviourActions = new BehaviourActions();
             behaviourActions.AddMultiThreadableBehaviour(0, () =>
             {
 
-                if (inv.hunger >= 3)
+                if (inv.hunger >= exhaustionLimit)
                 {
                     if (goldMine != null && goldMine.RetrieveFood(1) > 0)
                     {

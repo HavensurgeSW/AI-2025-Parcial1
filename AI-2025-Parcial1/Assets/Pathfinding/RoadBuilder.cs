@@ -29,8 +29,6 @@ namespace KarplusParcial1.Pathfinding
                     Debug.LogWarning($"RoadBuilder: no node for mine at {goalCoord}, skipping.");
                     continue;
                 }
-
-                // BFS structures
                 var queue = new Queue<Node<Vector2Int>>();
                 var parents = new Dictionary<Node<Vector2Int>, Node<Vector2Int>>();
                 var visited = new HashSet<Node<Vector2Int>>();
@@ -63,7 +61,7 @@ namespace KarplusParcial1.Pathfinding
                     foreach (var d in deltas)
                     {
                         var neighCoord = new Vector2Int(coord.x + d.x, coord.y + d.y);
-                        // Use GraphView.GetNodeAt so we don't wrap and we respect map bounds
+                    
                         var neighbor = gv.GetNodeAt(neighCoord);
                         if (neighbor == null) continue;
                         if (neighbor.IsBlocked()) continue;
