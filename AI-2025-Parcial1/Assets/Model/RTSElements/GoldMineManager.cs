@@ -74,7 +74,7 @@ namespace KarplusParcial1.Management
                 {
                     pos = new Vector2Int(UnityEngine.Random.Range(0, areaSize.x), UnityEngine.Random.Range(0, areaSize.y));
                 } while (byPosition.ContainsKey(pos));
-                var mine = new GoldMine(maxGold, pos);
+                GoldMine mine = new GoldMine(maxGold, pos);
                 AddMine(mine);
             }
         }

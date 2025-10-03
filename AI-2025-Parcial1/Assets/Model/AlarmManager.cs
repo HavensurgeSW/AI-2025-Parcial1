@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace KarplusParcial1.Management
 {
-    public class AlarmManager : MonoBehaviour
+    public class AlarmManager
     {
         public static event Action OnAlarmRaised;
         public static event Action OnAlarmCleared;
@@ -11,13 +11,11 @@ namespace KarplusParcial1.Management
         public void RaiseAlarm()
         {
             OnAlarmRaised?.Invoke();
-            Debug.Log("Alarm raised");
-        }
 
+        }
         public void ClearAlarm()
         {
             OnAlarmCleared?.Invoke();
-            Debug.Log("Alarm cleared");
         }
     }
 }

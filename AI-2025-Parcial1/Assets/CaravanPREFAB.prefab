@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6680054635676723919}
   - component: {fileID: 3846904656676843316}
-  - component: {fileID: 6942760450959731523}
+  - component: {fileID: 1532588573859730133}
   m_Layer: 0
   m_Name: CaravanPREFAB
   m_TagString: Untagged
@@ -88,7 +88,7 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &6942760450959731523
+--- !u!114 &1532588573859730133
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -97,7 +97,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 2692300864886334460}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2337d010481773047b8e89d5ee017e7a, type: 3}
+  m_Script: {fileID: 11500000, guid: ec10a7055a922c4429e8027238c5790e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GV: {fileID: 0}

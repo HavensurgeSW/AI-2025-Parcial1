@@ -3,20 +3,22 @@ using KarplusParcial1.Graph.Core;
 using KarplusParcial1.Graph;
 using KarplusParcial1.FSM.States;
 using KarplusParcial1.Management;
+using Model;
 
 namespace KarplusParcial1.RTSElements
 {
-    class Miner : MonoBehaviour
+    public class Miner
     {
         int miningRate = 1;
 
         public Townhall townhall = new Townhall();
         InventoryData inventoryData = new InventoryData();
 
-        public GraphView GV;
+        public GraphView GV = new GraphView();
         Node<Vector2Int> graphPos = new Node<Vector2Int>();
         Node<Vector2Int> targetPos = new Node<Vector2Int>();
         Node<Vector2Int> home = new Node<Vector2Int>();
+        public Model.ModelVector3 pos = new ModelVector3(0, 0, 0);
 
         public enum State
         {
@@ -41,20 +43,19 @@ namespace KarplusParcial1.RTSElements
 
 
         public FSM<State, Flags> minerFsm;
-        private State previousState;
         private bool wasAlarmed = false;
 
         public void Start()
         {
             Vector2Int homePos = townhall != null ? townhall.Position : new Vector2Int(0, 0);
-            home.SetCoordinate(homePos);
+            home.SetCoordinate(homePos);        
 
             graphPos.SetCoordinate(new Vector2Int(0, 0));
             minerFsm = new FSM<State, Flags>(State.MoveToTown);
 
             minerFsm.AddState<MinerIdle>(State.Idle);
-            minerFsm.AddState<MinerMovingState>(State.MoveToTarget, onTickParameters: () => new object[] { this.transform, Time.deltaTime }, onEnterParameters: () => new object[] { graphPos, targetPos, GV });
-            minerFsm.AddState<MinerMoveToTown>(State.MoveToTown, onTickParameters: () => new object[] { this.transform, Time.deltaTime, wasAlarmed }, onEnterParameters: () => new object[] { graphPos, home, GV });
+            minerFsm.AddState<MinerMovingState>(State.MoveToTarget, onTickParameters: () => new object[] { pos, Time.deltaTime }, onEnterParameters: () => new object[] { graphPos, targetPos, GV });
+            minerFsm.AddState<MinerMoveToTown>(State.MoveToTown, onTickParameters: () => new object[] { pos, Time.deltaTime, wasAlarmed }, onEnterParameters: () => new object[] { graphPos, home, GV });
 
             minerFsm.AddState<MinerMiningState>(State.Mining, onTickParameters: () => new object[] {
             (GV != null && GV.mineManager != null) ? GV.mineManager.GetMineAt(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y)) : null,
@@ -73,7 +74,7 @@ namespace KarplusParcial1.RTSElements
             AlarmManager.OnAlarmCleared += HandleAlarmCleared;
         }
 
-        private void OnDestroy()
+        public void OnDestroy()
         {
             AlarmManager.OnAlarmRaised -= HandleAlarmRaised;
             AlarmManager.OnAlarmCleared -= HandleAlarmCleared;
@@ -81,7 +82,6 @@ namespace KarplusParcial1.RTSElements
 
         private void HandleAlarmRaised()
         {
-            Debug.Log("Miner alarm raised, going to town!");
             wasAlarmed = true;
             minerFsm.ForceSetState(State.MoveToTown);
         }
@@ -94,13 +94,6 @@ namespace KarplusParcial1.RTSElements
                 minerFsm.ForceSetState(State.MoveToTarget);
             }
         }
-
-        private void Update()
-        {
-            minerFsm.Tick();
-        }
-
-
         public void SetTargetToClosestMine()
         {
             var origin = graphPos.GetCoordinate();

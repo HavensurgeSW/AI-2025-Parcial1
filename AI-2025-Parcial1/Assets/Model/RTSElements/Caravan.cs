@@ -7,8 +7,7 @@ using KarplusParcial1.Management;
 
 namespace KarplusParcial1.RTSElements
 {
-
-    public class Caravan : MonoBehaviour
+    public class Caravan
     {
 
         public Townhall townhall = new Townhall();
@@ -18,6 +17,7 @@ namespace KarplusParcial1.RTSElements
         Node<Vector2Int> graphPos = new Node<Vector2Int>();
         Node<Vector2Int> targetPos = new Node<Vector2Int>();
         Node<Vector2Int> home = new Node<Vector2Int>();
+        public Model.ModelVector3 pos = new Model.ModelVector3(0, 0, 0);
 
         public enum State
         {
@@ -51,10 +51,9 @@ namespace KarplusParcial1.RTSElements
             inventory.maxInventory = 10;
             inventory.inventory = inventory.maxInventory;
 
-
             caravanFsm.AddState<CaravanIdleState>(State.Idle);
-            caravanFsm.AddState<CaravanMovingState>(State.MoveToTarget, onTickParameters: () => new object[] { this.transform, Time.deltaTime }, onEnterParameters: () => new object[] { graphPos, targetPos, GV });
-            caravanFsm.AddState<CaravanMovingToTownState>(State.MoveToTown, onTickParameters: () => new object[] { this.transform, Time.deltaTime, wasAlarmed }, onEnterParameters: () => new object[] { graphPos, home, GV });
+            caravanFsm.AddState<CaravanMovingState>(State.MoveToTarget, onTickParameters: () => new object[] { pos, Time.deltaTime }, onEnterParameters: () => new object[] { graphPos, targetPos, GV });
+            caravanFsm.AddState<CaravanMovingToTownState>(State.MoveToTown, onTickParameters: () => new object[] { pos, Time.deltaTime, wasAlarmed }, onEnterParameters: () => new object[] { graphPos, home, GV });
             caravanFsm.AddState<CaravanRestockingState>(State.Restocking, onTickParameters: () => new object[] { inventory });
             caravanFsm.AddState<CaravanDepositingState>(State.Depositing, onTickParameters: () => new object[] { GV.mineManager.GetMineAt(new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y)), inventory });
 
@@ -72,7 +71,7 @@ namespace KarplusParcial1.RTSElements
 
         }
 
-        private void OnDestroy()
+        public void OnDestroy()
         {
             AlarmManager.OnAlarmRaised -= HandleAlarmRaised;
             AlarmManager.OnAlarmCleared -= HandleAlarmCleared;
@@ -99,28 +98,8 @@ namespace KarplusParcial1.RTSElements
             }
         }
 
-        private void Update()
-        {
-            caravanFsm.Tick();
-
-        }
-
-
         public void SetTargetToClosestMine()
-        {
-            if (GV == null)
-            {
-                GV = FindFirstObjectByType<GraphView>();
-                if (GV == null)
-                {
-                   
-                    return;
-                }
-            }
-            if (GV.mineManager == null)
-            {       
-                return;
-            }
+        {          
 
             Vector2Int origin = new Vector2Int(graphPos.GetCoordinate().x, graphPos.GetCoordinate().y);
             GoldMine nearest = GV.mineManager.FindNearestActive(origin);

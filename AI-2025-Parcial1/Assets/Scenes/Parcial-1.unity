@@ -708,7 +708,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 1
         m_CallState: 2
-      - m_Target: {fileID: 1131261646}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
         m_MethodName: SetActive
         m_Mode: 6
@@ -1052,7 +1052,6 @@ GameObject:
   - component: {fileID: 594450554}
   - component: {fileID: 594450553}
   - component: {fileID: 594450552}
-  - component: {fileID: 594450556}
   m_Layer: 5
   m_Name: GameCanvas
   m_TagString: Untagged
@@ -1147,18 +1146,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &594450556
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 594450551}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d867c3308ab79e8438096b08fca07910, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &619394800
 GameObject:
   m_ObjectHideFlags: 0
@@ -2097,53 +2084,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1128724106}
   m_CullTransparentMesh: 1
---- !u!1 &1131261646
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1131261648}
-  - component: {fileID: 1131261647}
-  m_Layer: 0
-  m_Name: GraphView
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!114 &1131261647
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1131261646}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8834b5e5f64822a4ab2673211cadf09e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  tilePrefab: {fileID: 4880998419666000782, guid: 63859702e8937ec4f99bd28ff96ffaa7, type: 3}
-  wrapWorld: 0
-  mapSize: {x: 0, y: 0}
---- !u!4 &1131261648
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1131261646}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1134798696
 GameObject:
   m_ObjectHideFlags: 0
@@ -2472,7 +2412,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5466959, y: 0.60140264}
   m_AnchorMax: {x: 0.77900004, y: 0.6534026}
-  m_AnchoredPosition: {x: -0.5, y: -0.30000305}
+  m_AnchoredPosition: {x: -0.5, y: -0.2999878}
   m_SizeDelta: {x: 1, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1268576667
@@ -2635,7 +2575,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.0056762695, y: 0.5062866}
+  m_AnchoredPosition: {x: 0.0056152344, y: 0.50634766}
   m_SizeDelta: {x: -1686.56, y: -824.87}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1477046983
@@ -3335,7 +3275,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 594450556}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: AlarmManager, Assembly-CSharp
         m_MethodName: ClearAlarm
         m_Mode: 1
@@ -3438,10 +3378,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 917514ca26776b24a99965f01c3543e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GV: {fileID: 1131261647}
+  wrapWorld: 1
   mapDimensions: {x: 10, y: 10}
-  miner: {fileID: 2692300864886334460, guid: be07f92c3a51dae4bbe4b59531d8392d, type: 3}
-  caravan: {fileID: 2692300864886334460, guid: 45d083009ea7a8049a8477dafced4614, type: 3}
+  minerPrefab: {fileID: 2692300864886334460, guid: be07f92c3a51dae4bbe4b59531d8392d, type: 3}
+  caravanPrefab: {fileID: 2692300864886334460, guid: 45d083009ea7a8049a8477dafced4614, type: 3}
   tilePrefab: {fileID: 4880998419666000782, guid: 63859702e8937ec4f99bd28ff96ffaa7, type: 3}
   mapX: {fileID: 1727274715}
   mapY: {fileID: 1928000264}
@@ -3601,7 +3541,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 594450556}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: AlarmManager, Assembly-CSharp
         m_MethodName: RaiseAlarm
         m_Mode: 1
@@ -4200,7 +4140,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5577848, y: 0.669}
   m_AnchorMax: {x: 0.76100004, y: 0.7575843}
-  m_AnchoredPosition: {x: 0.1000061, y: -0.1000061}
+  m_AnchoredPosition: {x: 0.099975586, y: -0.1000061}
   m_SizeDelta: {x: -1, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2080771231
@@ -4486,7 +4426,6 @@ SceneRoots:
   m_Roots:
   - {fileID: 519420032}
   - {fileID: 619394802}
-  - {fileID: 1131261648}
   - {fileID: 1763446135}
   - {fileID: 1682586986}
   - {fileID: 594450555}

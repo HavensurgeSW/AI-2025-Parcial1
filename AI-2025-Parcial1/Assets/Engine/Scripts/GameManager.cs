@@ -1,58 +1,166 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
-using KarplusParcial1.Management;
+using UnityEngine.UI;
+using TMPro;
+
+using KarplusParcial1.Graph;
+using KarplusParcial1.RTSElements;
+using KarplusParcial1.Pathfinding;
 using KarplusParcial1.Graph.Core;
+using System.Collections.Generic;
 using KarplusParcial1.Graph.VoronoiAlgorithm;
 
-namespace KarplusParcial1.Graph
+
+namespace KarplusParcial1.Management
 {
-    public class GraphView : MonoBehaviour
+    public class GameManager : MonoBehaviour
     {
         public Vector2IntGraph<Node<Vector2Int>> graph;
-        public GoldMineManager mineManager;
+        public GraphView GV;
 
-        [SerializeField] private GameObject tilePrefab;
-        float tileSpacing = 1.0f;
+        public GoldMineManager MM;
+        public Townhall TH;
+        public AlarmManager AM;
 
-        public Dictionary<Vector2Int, Vector2Int> nearestMineLookup = new Dictionary<Vector2Int, Vector2Int>();
-        public bool wrapWorld = false;
-        public Vector2Int mapSize = new Vector2Int(0, 0);
+        //EX GRAPH VIEW STUFF
+            // Para evitar tener que hacer finds, me guardo los SpriteRenderers
+            private Dictionary<Vector2Int, SpriteRenderer> tileRenderers = new Dictionary<Vector2Int, SpriteRenderer>(capacity: 0);
+            public Dictionary<Vector2Int, Vector2Int> nearestMineLookup = new Dictionary<Vector2Int, Vector2Int>();
+            float tileSpacing = 1.0f;
+            public bool wrapWorld = true;
 
-        // Para evitar tener que hacer finds, me guardo los SpriteRenderers
-        private Dictionary<Vector2Int, SpriteRenderer> tileRenderers = new Dictionary<Vector2Int, SpriteRenderer>(capacity: 0);
 
         public float TileSpacing { get { return tileSpacing; } }
+        
 
-        private void OnDrawGizmos()
+        [SerializeField] Vector2Int mapDimensions = new Vector2Int(10, 10);
+
+        [SerializeField] GameObject minerPrefab;
+        [SerializeField] GameObject caravanPrefab;
+        [SerializeField] GameObject tilePrefab;
+
+        //UI Inputs
+        [SerializeField] TMP_InputField mapX;
+        [SerializeField] TMP_InputField mapY;
+        [SerializeField] TMP_InputField mineAmount;
+        [SerializeField] Slider tileSpacingSlider;
+        [SerializeField] TMP_Text scoreTracker;
+
+        private volatile bool voronoiNeedsUpdate = false;
+
+        private void Awake()
         {
-            if (!Application.isPlaying) return;
-            if (graph == null || graph.nodes == null) return;
+            int x, y, mines;
+            if (!int.TryParse(mapX.text, out x))
+                x = 20;
+            if (!int.TryParse(mapY.text, out y))
+                y = 20;
+            if (!int.TryParse(mineAmount.text, out mines))
+                mines = 4;
 
-            foreach (Node<Vector2Int> node in graph.nodes)
+
+            mapDimensions = new Vector2Int(x, y);
+
+            graph = new Vector2IntGraph<Node<Vector2Int>>(mapDimensions.x, mapDimensions.y);
+            TH = new Townhall(new Vector2Int(0, 0));
+            MM = new GoldMineManager();
+            AM = new AlarmManager();
+            GV = new GraphView();
+            GV.AssignMineManager(MM);
+            MM.CreateMines(mines, 60, new Vector2Int(mapDimensions.x, mapDimensions.y));
+
+            if (MM != null)
+                MM.MineDepleted += OnMineDepleted;
+
+            GV.graph = graph;
+            tileSpacing = tileSpacingSlider.value;
+            GV.mapSize = mapDimensions;
+            //GV.ColorWithTerrain();
+            InstantiateTiles();
+            ColorWithVoronoi();
+            RoadBuilder.BuildRoads(GV, new Vector2Int(0, 0));
+            OverlayRoads();
+            ColorMines(); 
+
+            AdjustCameraToGrid();
+
+            SpawnMiner();
+            //SpawnCaravan();
+        }
+
+        private void Update()
+        {
+            if (voronoiNeedsUpdate)
             {
-                if (mineManager != null && mineManager.GetMineAt(node.GetCoordinate()) != null)
+                voronoiNeedsUpdate = false;
+                if (GV != null)
                 {
-                    Gizmos.color = Color.yellow;
+                    ColorWithVoronoi();
+                    OverlayRoads();
+                    ColorMines();
                 }
-                else if (node.IsBlocked())
-                    Gizmos.color = Color.red;
-                else
-                    Gizmos.color = Color.gray;
-
-                Vector2Int coord = node.GetCoordinate();
-                Gizmos.DrawWireSphere(new Vector3(coord.x * tileSpacing, coord.y * tileSpacing, 1), 0.1f);
             }
+            scoreTracker.text = "Gold stored: " + TH.goldStored;
+        }
 
-            if (mineManager != null)
+        private void OnDestroy()
+        {
+            if (MM != null)
+                MM.MineDepleted -= OnMineDepleted;
+        }
+
+        private void OnMineDepleted(GoldMine mine)
+        {
+            voronoiNeedsUpdate = true;
+        }
+
+        private void AdjustCameraToGrid()
+        {
+            Camera cam = Camera.main;
+            float centerX = (mapDimensions.x - 1) / 2f;
+            float centerY = (mapDimensions.y - 1) / 2f;
+            cam.transform.position = new Vector3(centerX, centerY, cam.transform.position.z);
+
+            float aspect = cam.aspect;
+            float sizeX = mapDimensions.x / (2f * aspect);
+            float sizeY = mapDimensions.y / 2f;
+            cam.orthographicSize = Mathf.Max(sizeX, sizeY) + 1f;
+        }
+
+        public void SpawnMiner()
+        {
+            GameObject instance = Instantiate(minerPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+            var m = instance.GetComponent<MinerView>();
+            if (m != null)
             {
-                var sites = new List<Vector2Int>();
-                foreach (var m in mineManager.Mines)
-                    if (m != null && !m.isDepleted) sites.Add(m.Position);
-
-                Voronoi.DrawBisectorsGizmos(sites, mapSize, wrapWorld, TileSpacing, Color.cyan);
+                m.miner.GV = GV;
+                m.miner.GV.mineManager = MM;
+                m.miner.townhall = TH;
             }
         }
+
+        public void SpawnCaravan()
+        {
+            GameObject instance = Instantiate(caravanPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+            var c = instance.GetComponent<CaravanView>();
+            if (c != null)
+            {
+                c.caravan.GV = GV;
+                c.caravan.GV.mineManager = MM;
+                c.caravan.townhall = TH;
+            }
+        }
+
+
+        //DEBUG METHOD
+        public void SupplyFoodToMines()
+        {
+            foreach (GoldMine mine in MM.Mines)
+            {
+                mine.foodStored = 10;
+            }
+        }
+    
 
         public void InstantiateTiles()
         {
@@ -76,34 +184,32 @@ namespace KarplusParcial1.Graph
                 }
             }
         }
-
         public void ColorMines()
         {
             if (graph == null || graph.nodes == null) return;
-            if (mineManager == null) return;
+            if (MM == null) return;
 
             foreach (var node in graph.nodes)
             {
                 Vector2Int coord = node.GetCoordinate();
                 if (tileRenderers.TryGetValue(coord, out var sr) && sr != null)
                 {
-                    if (mineManager.GetMineAt(coord) != null) sr.color = Color.yellow;
+                    if (MM.GetMineAt(coord) != null) sr.color = Color.yellow;
                 }
                 else
                 {
                     var child = transform.Find($"Tile_{coord.x}_{coord.y}");
                     if (child == null) continue;
                     var sr2 = child.GetComponent<SpriteRenderer>(); if (sr2 == null) continue;
-                    if (mineManager.GetMineAt(coord) != null) sr2.color = Color.yellow;
+                    if (MM.GetMineAt(coord) != null) sr2.color = Color.yellow;
                 }
             }
         }
-
         public void ColorWithVoronoi()
         {
             if (graph == null || graph.nodes == null) return;
 
-            if (mineManager == null)
+            if (MM == null)
             {
                 nearestMineLookup.Clear();
                 return;
@@ -111,7 +217,7 @@ namespace KarplusParcial1.Graph
 
 
             var sites = new List<Vector2Int>();
-            foreach (var m in mineManager.Mines)
+            foreach (var m in MM.Mines)
             {
                 if (m == null) continue;
                 if (m.isDepleted) continue;
@@ -125,10 +231,10 @@ namespace KarplusParcial1.Graph
                 return;
             }
 
-            nearestMineLookup = Voronoi.ComputeNearestLookupByClipping(graph, sites, mapSize, wrapWorld);
+            nearestMineLookup = Voronoi.ComputeNearestLookupByClipping(graph, sites, mapDimensions, wrapWorld);
 
-            int width = Math.Max(1, mapSize.x);
-            int height = Math.Max(1, mapSize.y);
+            int width = Math.Max(1, mapDimensions.x);
+            int height = Math.Max(1, mapDimensions.y);
             var blocked = new HashSet<Vector2Int>(graph.nodes.Count);
             foreach (var n in graph.nodes) if (n.IsBlocked()) blocked.Add(n.GetCoordinate());
 
@@ -194,7 +300,7 @@ namespace KarplusParcial1.Graph
                 if (sr == null) continue;
 
 
-                if (mineManager.GetMineAt(coord) != null)
+                if (MM.GetMineAt(coord) != null)
                 {
                     sr.color = Color.yellow;
                     continue;
@@ -215,7 +321,6 @@ namespace KarplusParcial1.Graph
                 sr.color = Color.green;
             }
         }
-
         public void OverlayRoads()
         {
             if (graph == null || graph.nodes == null) return;
@@ -237,39 +342,7 @@ namespace KarplusParcial1.Graph
                 }
             }
         }
-
-        public void CallExist() { Debug.Log("GV exists"); }
-        public void AssignMineManager(GoldMineManager gmm) { mineManager = gmm; }
-        public void AssignTile(GameObject go) { tilePrefab = go; }
-        public void SetSpacing(float s) { tileSpacing = s; }
-
-        public Node<Vector2Int> GetNodeAt(Vector2Int coord)
-        {
-            if (graph == null || graph.nodes == null) return null;
-            return graph.nodes.Find(n => n.GetCoordinate().Equals(coord));
-        }
-
-        public bool TryGetNearestMineAt(Vector2Int coord, out Vector2Int mineCoordinate)
-        {
-            mineCoordinate = default;
-            if (nearestMineLookup != null && nearestMineLookup.TryGetValue(coord, out Vector2Int lookup))
-            {
-                mineCoordinate = lookup;
-                return true;
-            }
-
-            if (mineManager != null)
-            {
-                var m = mineManager.FindNearest(coord);
-                if (m != null)
-                {
-                    mineCoordinate = m.Position;
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        public void SetSpacing(float s) { tileSpacing = s; }             
 
         private static int WrappedDelta(int a, int b, int size, bool wrap)
         {
@@ -280,4 +353,6 @@ namespace KarplusParcial1.Graph
             return Math.Min(abs, alt);
         }
     }
+
+
 }

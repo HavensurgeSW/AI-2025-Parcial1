@@ -1,14 +1,15 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
+
 using KarplusParcial1.FSM.Core;
+using KarplusParcial1.Pathfinding;
 using KarplusParcial1.Graph;
 using KarplusParcial1.Graph.Core;
 using KarplusParcial1.RTSElements;
-using KarplusParcial1.Pathfinding;
 
 namespace KarplusParcial1.FSM.States
 {
-    public class MinerMovingState : State
+    public class CaravanMovingState : State
     {
         //Pathfinding 
         private GraphView GV;
@@ -18,9 +19,8 @@ namespace KarplusParcial1.FSM.States
         List<Node<Vector2Int>> path = new List<Node<Vector2Int>>();
 
         //Game movement
-        private Transform minerTransform;
+        private Model.ModelVector3 caravanTransform = new Model.ModelVector3();
         private int currentPathIndex;
-
         // Snapping configuration
         private float snapInterval = 0.5f;
         private float snapTimer = 0f;
@@ -30,39 +30,52 @@ namespace KarplusParcial1.FSM.States
             startNode = parameters[0] as Node<Vector2Int>;
             destination = parameters[1] as Node<Vector2Int>;
             GV = parameters[2] as GraphView;
-            traveler.pathfinder = new AStarPathfinder<Node<Vector2Int>>();
-
-            
+            traveler.pathfinder = new AStarCaravan<Node<Vector2Int>>();
 
             BehaviourActions behaviourActions = new BehaviourActions();
             behaviourActions.AddMainThreadableBehaviour(0, () =>
             {
-                Node<Vector2Int> graphNode = null;
 
+                Node<Vector2Int> graphNode = null;
                 if (GV != null && GV.graph != null && GV.graph.nodes != null)
                 {
                     graphNode = GV.graph.nodes.Find(n => n.GetCoordinate().Equals(startNode.GetCoordinate()));
                 }
 
-                if (graphNode != null)
+                bool foundActiveMine = false;
+
+                if (GV != null && GV.mineManager != null)
                 {
-                    if (traveler.TryGetNearestMine(graphNode, out Vector2Int mineCoord))
+                    var nearest = GV.mineManager.FindNearestActive(startNode.GetCoordinate());
+                    if (nearest != null)
                     {
-                        destination.SetCoordinate(mineCoord);
-                    }
-                }
-                else
-                {
-                    if (GV != null && GV.mineManager != null)
-                    {
-                        var nearestMine = GV.mineManager.FindNearest(startNode.GetCoordinate());
-                        if (nearestMine != null)
-                            destination.SetCoordinate(nearestMine.Position);
+                        destination.SetCoordinate(nearest.Position);
+                        foundActiveMine = true;
                     }
                 }
 
-                path = traveler.FindPath(startNode, destination, GV);
-                if (path == null) path = new List<Node<Vector2Int>>();
+                if (!foundActiveMine && graphNode != null)
+                {
+                    if (traveler.TryGetNearestMine(graphNode, out Vector2Int mineCoord))
+                    {
+                        var mine = GV?.mineManager?.GetMineAt(mineCoord);
+                        if (mine != null && mine.HasActiveMiners)
+                        {
+                            destination.SetCoordinate(mineCoord);
+                            foundActiveMine = true;
+                        }
+                    }
+                }
+
+                if (!foundActiveMine)
+                {                    
+                    path = new List<Node<Vector2Int>>();
+                    currentPathIndex = 0;
+                    snapTimer = 0f;
+                    return;
+                }
+
+                path = traveler.FindPath(startNode, destination, GV) ?? new List<Node<Vector2Int>>();
                 currentPathIndex = 0;
                 snapTimer = 0f;
             });
@@ -72,13 +85,12 @@ namespace KarplusParcial1.FSM.States
         public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
         {
             BehaviourActions behaviourActions = new BehaviourActions();
-            minerTransform = parameters[0] as Transform;
+            caravanTransform = parameters[0] as Model.ModelVector3;
             float deltaTime = (float)parameters[1];
-
 
             behaviourActions.AddMainThreadableBehaviour(0, () =>
             {
-                if (minerTransform == null) return;
+                if (caravanTransform == null) return;
                 if (GV == null) return;
                 if (path == null || path.Count == 0) return;
 
@@ -93,9 +105,11 @@ namespace KarplusParcial1.FSM.States
                     if (targetNode == null) break;
 
                     Vector2Int coord = targetNode.GetCoordinate();
-                    Vector3 targetPos = new Vector3(coord.x * GV.TileSpacing, coord.y * GV.TileSpacing, minerTransform.position.z);
+                    Vector3 targetPos = new Vector3(coord.x * GV.TileSpacing, coord.y * GV.TileSpacing, caravanTransform.Z);
 
-                    minerTransform.position = targetPos;
+                    caravanTransform.X = targetPos.x;
+                    caravanTransform.Y = targetPos.y;
+                    caravanTransform.Z = targetPos.z;
 
                     if (startNode != null)
                     {
@@ -112,7 +126,7 @@ namespace KarplusParcial1.FSM.States
             {
                 if (path == null || path.Count == 0)
                 {
-                    OnFlag?.Invoke(Miner.Flags.OnTargetReach);
+                    OnFlag?.Invoke(Caravan.Flags.OnTargetReach);
                     return;
                 }
 
@@ -122,7 +136,7 @@ namespace KarplusParcial1.FSM.States
                     {
                         startNode.SetCoordinate(path[path.Count - 1].GetCoordinate());
                     }
-                    OnFlag?.Invoke(Miner.Flags.OnTargetReach);
+                    OnFlag?.Invoke(Caravan.Flags.OnTargetReach);
                 }
             });
             return behaviourActions;
@@ -141,8 +155,32 @@ namespace KarplusParcial1.FSM.States
         }
     }
 
-    public class MinerMoveToTown
-        : State
+    public class CaravanDepositingState : State
+    {
+        public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
+        {
+            GoldMine goldMine = parameters[0] as GoldMine;
+            InventoryData inv = parameters[1] as InventoryData;
+
+            BehaviourActions behaviourActions = new BehaviourActions();
+
+
+            behaviourActions.AddMultiThreadableBehaviour(0, () =>
+            {
+                goldMine.foodStored += inv.inventory;
+                inv.inventory = 0;
+            });
+
+            behaviourActions.SetTransitionBehaviour(() =>
+            {
+                OnFlag?.Invoke(Caravan.Flags.OnInventoryEmpty);
+            });
+
+            return behaviourActions;
+        }
+    }
+
+    public class CaravanMovingToTownState : State
     {
         //Pathfinding 
         private GraphView GV;
@@ -152,7 +190,7 @@ namespace KarplusParcial1.FSM.States
         List<Node<Vector2Int>> path = new List<Node<Vector2Int>>();
 
         //Game movement
-        private Transform minerTransform;
+        private Model.ModelVector3 caravanTransform = new Model.ModelVector3();
         private int currentPathIndex;
         // Snapping configuration
         private float snapInterval = 0.5f;
@@ -163,17 +201,15 @@ namespace KarplusParcial1.FSM.States
             startNode = parameters[0] as Node<Vector2Int>;
             destination = parameters[1] as Node<Vector2Int>;
             GV = parameters[2] as GraphView;
+            traveler.pathfinder = new AStarCaravan<Node<Vector2Int>>();
 
-
-            currentPathIndex = 0;
-            snapTimer = 0f;
             BehaviourActions behaviourActions = new BehaviourActions();
-            behaviourActions.AddMainThreadableBehaviour(0, () =>
-            {
-                path = traveler.FindPath(startNode, destination, GV);
-                //si el path devuelve null, inicio la variable para que no explote todo
-                if (path == null) path = new List<Node<Vector2Int>>();
+            behaviourActions.AddMainThreadableBehaviour(0, () => {
 
+                path = traveler.FindPath(startNode, destination, GV) ?? new List<Node<Vector2Int>>();
+
+                currentPathIndex = 0;
+                snapTimer = 0f;
             });
             return behaviourActions;
         }
@@ -181,13 +217,13 @@ namespace KarplusParcial1.FSM.States
         public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
         {
             BehaviourActions behaviourActions = new BehaviourActions();
-            minerTransform = parameters[0] as Transform;
+            caravanTransform = parameters[0] as Model.ModelVector3;
             float deltaTime = (float)parameters[1];
             bool wasAlarmed = (bool)parameters[2];
 
             behaviourActions.AddMainThreadableBehaviour(0, () =>
             {
-                if (minerTransform == null) return;
+                if (caravanTransform == null) return;
                 if (GV == null) return;
                 if (path == null || path.Count == 0) return;
 
@@ -202,9 +238,11 @@ namespace KarplusParcial1.FSM.States
                     if (targetNode == null) break;
 
                     Vector2Int coord = targetNode.GetCoordinate();
-                    Vector3 targetPos = new Vector3(coord.x * GV.TileSpacing, coord.y * GV.TileSpacing, minerTransform.position.z);
+                    Vector3 targetPos = new Vector3(coord.x * GV.TileSpacing, coord.y * GV.TileSpacing, caravanTransform.Z);
 
-                    minerTransform.position = targetPos;
+                    caravanTransform.X = targetPos.x;
+                    caravanTransform.Y = targetPos.y;
+                    caravanTransform.Z = targetPos.z;
 
                     if (startNode != null)
                     {
@@ -221,19 +259,18 @@ namespace KarplusParcial1.FSM.States
             {
                 if (path == null || path.Count == 0)
                 {
-                    OnFlag?.Invoke(Miner.Flags.OnTargetReach);
+                    OnFlag?.Invoke(Caravan.Flags.OnTargetReach);
                     return;
                 }
 
                 if (currentPathIndex >= path.Count)
                 {
-
                     if (startNode != null && path.Count > 0)
                     {
                         startNode.SetCoordinate(path[path.Count - 1].GetCoordinate());
                     }
                     if (!wasAlarmed)
-                        OnFlag?.Invoke(Miner.Flags.OnTargetReach);
+                        OnFlag?.Invoke(Caravan.Flags.OnTargetReach);
                 }
             });
 
@@ -252,127 +289,35 @@ namespace KarplusParcial1.FSM.States
             });
             return behaviourActions;
         }
-
-
     }
-    public class MinerDepositingState 
-        : State
-    {
-        public override BehaviourActions GetOnEnterBehaviours(params object[] parameters)
-        {
-            BehaviourActions behaviourActions = new BehaviourActions();
-            return behaviourActions;
-        }
 
+    public class CaravanRestockingState : State
+    {
         public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
         {
-            Townhall townhall = parameters[0] as Townhall;
-            InventoryData inventory = parameters[1] as InventoryData;
+            InventoryData inv = parameters[0] as InventoryData;
 
             BehaviourActions behaviourActions = new BehaviourActions();
 
-            behaviourActions.AddMainThreadableBehaviour(0, () =>
-            {
-                if (inventory.inventory > 0)
-                {
-                    townhall.Deposit(inventory.inventory);
-                    inventory.inventory = 0;
-                }
-            });
 
-
-            behaviourActions.SetTransitionBehaviour(() =>
-            {
-                if (inventory.inventory == 0)
-                {
-                    OnFlag?.Invoke(Miner.Flags.OnInventoryEmpty);
-                }
-            });
-
-            return behaviourActions;
-        }
-        public override BehaviourActions GetOnExitBehaviours(params object[] parameters)
-        {
-            Miner miner = parameters[0] as Miner;
-            BehaviourActions behaviourActions = new BehaviourActions();
-            behaviourActions.AddMainThreadableBehaviour(0, () =>
-            {
-                miner.SetTargetToClosestMine();
-            });
-            return behaviourActions;
-        }
-    }
-
-    public class MinerMiningState : State
-    {
-        public override BehaviourActions GetOnEnterBehaviours(params object[] parameters)
-        {
-            GoldMine goldMine = parameters[0] as GoldMine;
-
-            BehaviourActions behaviourActions = new BehaviourActions();
             behaviourActions.AddMultiThreadableBehaviour(0, () =>
             {
-                goldMine.AddMiner();
-            });
-            return behaviourActions;
-        }
-
-        public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
-        {
-            GoldMine goldMine = parameters[0] as GoldMine;
-            int miningRate = (int)parameters[1];
-            InventoryData inv = parameters[2] as InventoryData;
-            Miner miner = parameters[3] as Miner;
-
-            int exhaustionLimit = 3;
-
-
-            BehaviourActions behaviourActions = new BehaviourActions();
-            behaviourActions.AddMultiThreadableBehaviour(0, () =>
-            {
-
-                if (inv.hunger >= exhaustionLimit)
-                {
-                    if (goldMine != null && goldMine.RetrieveFood(1) > 0)
-                    {
-                        inv.hunger = 0;
-
-                    }
-                }
-                else
-                {
-                    int minedAmount = 0;
-                    if (goldMine != null)
-                        minedAmount = goldMine.Mine(miningRate);
-                    inv.inventory += minedAmount;
-                    inv.hunger++;
-                }
-
+                inv.inventory = inv.maxInventory;
             });
 
             behaviourActions.SetTransitionBehaviour(() =>
             {
-                if (inv.inventory >= inv.maxInventory)
-                {
-                    OnFlag?.Invoke(Miner.Flags.OnInventoryFull);
-                }
-                else if (goldMine == null || goldMine.isDepleted)
-                {
-                    if (miner != null)
-                    {
-                        miner.SetTargetToClosestMine();
-                    }
-                    OnFlag?.Invoke(Miner.Flags.OnMineDepleted);
-                }
+                OnFlag?.Invoke(Caravan.Flags.OnInventoryFull);
             });
 
             return behaviourActions;
         }
     }
-    public class MinerIdle : State
+    public class CaravanIdleState : State
     {
         public override BehaviourActions GetOnTickBehaviours(params object[] parameters)
         {
+
 
 
             BehaviourActions behaviourActions = new BehaviourActions();
@@ -385,7 +330,7 @@ namespace KarplusParcial1.FSM.States
 
             behaviourActions.SetTransitionBehaviour(() =>
             {
-                //OnFlag?.Invoke(Miner.Flags.OnSpawned);            
+
             });
 
             return behaviourActions;

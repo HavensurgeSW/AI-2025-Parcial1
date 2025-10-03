@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6680054635676723919}
   - component: {fileID: 3846904656676843316}
-  - component: {fileID: 3809185511507498572}
+  - component: {fileID: 4309379420621992004}
   m_Layer: 0
   m_Name: MinerPREFAB
   m_TagString: Untagged
@@ -89,7 +89,7 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &3809185511507498572
+--- !u!114 &4309379420621992004
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -98,10 +98,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 2692300864886334460}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 36caa11c308b374469afce429c74ac2c, type: 3}
+  m_Script: {fileID: 11500000, guid: 00611fccf3ca592488c3da1c46511780, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GV: {fileID: 0}
 --- !u!1 &5572034781977026976
 GameObject:
   m_ObjectHideFlags: 0
